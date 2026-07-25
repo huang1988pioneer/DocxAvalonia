@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using Avalonia;
 
 namespace DocxAvalonia;
@@ -9,16 +8,7 @@ sealed class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        // Prevent one-off image/decode faults from taking down the whole process when possible.
-        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
-        {
-            Debug.WriteLine(e.ExceptionObject);
-        };
-        TaskScheduler.UnobservedTaskException += (_, e) =>
-        {
-            Debug.WriteLine(e.Exception);
-            e.SetObserved();
-        };
+        CrashLog.InstallGlobalHandlers();
 
         try
         {
@@ -26,7 +16,7 @@ sealed class Program
         }
         catch (Exception ex)
         {
-            Debug.WriteLine(ex);
+            CrashLog.Write("Main fatal", ex);
             throw;
         }
     }

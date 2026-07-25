@@ -1,4 +1,4 @@
-# DocxAvalonia
+﻿# DocxAvalonia
 
 以 **Avalonia UI** 打造的 Word 風格 `.docx` 編輯／預覽桌面程式。
 
@@ -59,7 +59,7 @@ dotnet run -c Release
 
 ```powershell
 dotnet build -c Release
-.\app-out\Release\DocxAvalonia.exe
+.\bin\Release\net8.0\DocxAvalonia.exe
 ```
 
 或：
