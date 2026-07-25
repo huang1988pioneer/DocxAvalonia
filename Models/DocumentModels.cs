@@ -338,6 +338,45 @@ public partial class ImageBlock : DocumentBlock
 
     public int PixelHeight { get; private set; }
 
+    public const double MinDisplayWidth = 40;
+    public const double MaxDisplayWidth = 720;
+
+    /// <summary>Resize keeping aspect ratio when pixel size is known.</summary>
+    public void ResizeToWidth(double width)
+    {
+        if (double.IsNaN(width) || double.IsInfinity(width))
+            return;
+        width = Math.Clamp(width, MinDisplayWidth, MaxDisplayWidth);
+        DisplayWidth = width;
+        if (PixelWidth > 0 && PixelHeight > 0)
+            DisplayHeight = width * PixelHeight / PixelWidth;
+        else if (DisplayHeight <= 0 || double.IsNaN(DisplayHeight))
+            DisplayHeight = width * 0.75;
+    }
+
+    /// <summary>Scale current display size by a factor (e.g. 1.15 = larger).</summary>
+    public void ResizeByFactor(double factor)
+    {
+        if (factor <= 0 || double.IsNaN(factor) || double.IsInfinity(factor))
+            return;
+        var w = DisplayWidth > 0 ? DisplayWidth : 400;
+        ResizeToWidth(w * factor);
+    }
+
+    public string SizeLabel
+    {
+        get
+        {
+            var w = (int)Math.Round(DisplayWidth);
+            var h = DisplayHeight > 0 ? (int)Math.Round(DisplayHeight) : 0;
+            return h > 0 ? $"{w} × {h}" : $"{w} 寬";
+        }
+    }
+
+    partial void OnDisplayWidthChanged(double value) => OnPropertyChanged(nameof(SizeLabel));
+
+    partial void OnDisplayHeightChanged(double value) => OnPropertyChanged(nameof(SizeLabel));
+
     public bool HasPreview => Preview is not null;
 
     public bool IsDecodeFailed

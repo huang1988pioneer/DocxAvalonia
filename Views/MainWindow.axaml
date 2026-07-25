@@ -217,6 +217,37 @@
 
                         <Border Width="1" Background="#D0D0D0" Margin="4,6" />
 
+                        <!-- 圖片大小 -->
+                        <Border Classes="ribbon-group">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <Button Content="放大" Command="{Binding ImageEnlargeCommand}"
+                                            Classes="ribbon-btn" ToolTip.Tip="圖片放大 15%" />
+                                    <Button Content="縮小" Command="{Binding ImageShrinkCommand}"
+                                            Classes="ribbon-btn" ToolTip.Tip="圖片縮小 15%" />
+                                    <Button Content="重設" Command="{Binding ImageResetSizeCommand}"
+                                            Classes="ribbon-btn" ToolTip.Tip="重設為原始寬度（上限 720）" />
+                                    <Button Content="頁寬" Command="{Binding ImageFitPageCommand}"
+                                            Classes="ribbon-btn" ToolTip.Tip="調整為頁面最大寬度" />
+                                    <Button Content="200" Command="{Binding ImageSetWidthCommand}" CommandParameter="200"
+                                            Classes="ribbon-btn" ToolTip.Tip="寬度 200" />
+                                    <Button Content="400" Command="{Binding ImageSetWidthCommand}" CommandParameter="400"
+                                            Classes="ribbon-btn" ToolTip.Tip="寬度 400" />
+                                    <Button Content="600" Command="{Binding ImageSetWidthCommand}" CommandParameter="600"
+                                            Classes="ribbon-btn" ToolTip.Tip="寬度 600" />
+                                    <TextBlock Text="{Binding ImageSizeText}"
+                                               VerticalAlignment="Center"
+                                               FontSize="11"
+                                               Foreground="#555"
+                                               Margin="6,0,0,0"
+                                               MinWidth="90" />
+                                </StackPanel>
+                                <TextBlock Text="圖片" Classes="ribbon-label" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Width="1" Background="#D0D0D0" Margin="4,6" />
+
                         <!-- 編輯 / 檢視 -->
                         <Border Classes="ribbon-group">
                             <StackPanel>
@@ -344,7 +375,24 @@
                                             <Border Margin="0,8,0,16"
                                                     BorderBrush="#CCCCCC"
                                                     BorderThickness="1"
-                                                    PointerPressed="OnBlockPointerPressed">
+                                                    PointerPressed="OnBlockPointerPressed"
+                                                    ContextRequested="OnTableContextRequested">
+                                                <Border.ContextMenu>
+                                                    <ContextMenu Opening="OnTableContextMenuOpening">
+                                                        <MenuItem Header="向下拓展（新增列）"
+                                                                  InputGesture="↓"
+                                                                  Click="OnTableMenuAddRowBelow" />
+                                                        <MenuItem Header="向右拓展（新增欄）"
+                                                                  InputGesture="→"
+                                                                  Click="OnTableMenuAddColumnRight" />
+                                                        <Separator />
+                                                        <MenuItem Header="向上插入列" Click="OnTableMenuInsertRowAbove" />
+                                                        <MenuItem Header="向左插入欄" Click="OnTableMenuInsertColumnLeft" />
+                                                        <Separator />
+                                                        <MenuItem Header="刪除目前列" Click="OnTableMenuDeleteRow" />
+                                                        <MenuItem Header="刪除目前欄" Click="OnTableMenuDeleteColumn" />
+                                                    </ContextMenu>
+                                                </Border.ContextMenu>
                                                 <ItemsControl ItemsSource="{Binding Rows}">
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate DataType="models:TableRowBlock">
@@ -361,7 +409,26 @@
                                                                                 Padding="6,4"
                                                                                 MinHeight="32"
                                                                                 Background="White"
-                                                                                PointerPressed="OnTableCellPointerPressed">
+                                                                                PointerPressed="OnTableCellPointerPressed"
+                                                                                ContextRequested="OnTableCellContextRequested">
+                                                                            <Border.ContextMenu>
+                                                                                <ContextMenu Opening="OnTableContextMenuOpening">
+                                                                                    <MenuItem Header="向下拓展（新增列）"
+                                                                                              Click="OnTableMenuAddRowBelow" />
+                                                                                    <MenuItem Header="向右拓展（新增欄）"
+                                                                                              Click="OnTableMenuAddColumnRight" />
+                                                                                    <Separator />
+                                                                                    <MenuItem Header="向上插入列"
+                                                                                              Click="OnTableMenuInsertRowAbove" />
+                                                                                    <MenuItem Header="向左插入欄"
+                                                                                              Click="OnTableMenuInsertColumnLeft" />
+                                                                                    <Separator />
+                                                                                    <MenuItem Header="刪除目前列"
+                                                                                              Click="OnTableMenuDeleteRow" />
+                                                                                    <MenuItem Header="刪除目前欄"
+                                                                                              Click="OnTableMenuDeleteColumn" />
+                                                                                </ContextMenu>
+                                                                            </Border.ContextMenu>
                                                                             <TextBox Text="{Binding Text, Mode=TwoWay}"
                                                                                      FontSize="{Binding FontSize}"
                                                                                      FontWeight="{Binding IsBold, Converter={x:Static conv:EditorConverters.FontWeightFromBool}}"
@@ -372,7 +439,8 @@
                                                                                      TextWrapping="Wrap"
                                                                                      AcceptsReturn="True"
                                                                                      MinHeight="24"
-                                                                                     GotFocus="OnTableCellGotFocus" />
+                                                                                     GotFocus="OnTableCellGotFocus"
+                                                                                     ContextRequested="OnTableCellContextRequested" />
                                                                         </Border>
                                                                     </DataTemplate>
                                                                 </ItemsControl.ItemTemplate>
@@ -388,15 +456,16 @@
                                             <Border Margin="0,8,0,12"
                                                     Padding="6"
                                                     Background="#FAFAFA"
-                                                    BorderBrush="#E0E0E0"
+                                                    BorderBrush="#90CAF9"
                                                     BorderThickness="1"
                                                     CornerRadius="2"
-                                                    PointerPressed="OnBlockPointerPressed"
+                                                    PointerPressed="OnImagePointerPressed"
+                                                    Cursor="Hand"
                                                     HorizontalAlignment="Left"
                                                     MaxWidth="740">
                                                 <StackPanel Spacing="4">
                                                     <Image Source="{Binding Preview}"
-                                                           MaxWidth="{Binding DisplayWidth}"
+                                                           Width="{Binding DisplayWidth}"
                                                            Stretch="Uniform"
                                                            HorizontalAlignment="Left"
                                                            IsVisible="{Binding HasPreview}" />
@@ -409,10 +478,14 @@
                                                                    Foreground="#E65100"
                                                                    TextWrapping="Wrap" />
                                                     </Border>
-                                                    <TextBlock Text="{Binding FileName}"
-                                                               FontSize="11"
-                                                               Foreground="#888888"
-                                                               IsVisible="{Binding FileName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                                    <TextBlock FontSize="11" Foreground="#666666">
+                                                        <TextBlock.Text>
+                                                            <MultiBinding StringFormat="{}{0}  ·  {1}">
+                                                                <Binding Path="FileName" TargetNullValue="圖片" />
+                                                                <Binding Path="SizeLabel" />
+                                                            </MultiBinding>
+                                                        </TextBlock.Text>
+                                                    </TextBlock>
                                                 </StackPanel>
                                             </Border>
                                         </DataTemplate>

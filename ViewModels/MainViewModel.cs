@@ -65,6 +65,12 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private TableCellBlock? _selectedTableCell;
 
+    [ObservableProperty]
+    private ImageBlock? _selectedImage;
+
+    [ObservableProperty]
+    private string _imageSizeText = "未選取圖片";
+
     /// <summary>Font size of the current formatting target (paragraph or table cell).</summary>
     [ObservableProperty]
     private double _activeFontSize = 14;
@@ -148,9 +154,20 @@ public partial class MainViewModel : ViewModelBase
     partial void OnSelectedBlockChanged(DocumentBlock? value)
     {
         SelectedParagraph = value as ParagraphBlock;
+        SelectedImage = value as ImageBlock;
         if (value is not TableBlock)
             SelectedTableCell = null;
         SyncActiveFontSize();
+        UpdateImageSizeText();
+    }
+
+    partial void OnSelectedImageChanged(ImageBlock? value) => UpdateImageSizeText();
+
+    private void UpdateImageSizeText()
+    {
+        ImageSizeText = SelectedImage is null
+            ? "未選取圖片"
+            : $"圖片 {SelectedImage.SizeLabel}";
     }
 
     partial void OnSelectedParagraphChanged(ParagraphBlock? value) => SyncActiveFontSize();
@@ -1275,13 +1292,103 @@ public partial class MainViewModel : ViewModelBase
                 index = Document.Blocks.Count;
             Document.Blocks.Insert(index, image);
             SelectedBlock = image;
+            SelectedImage = image;
+            UpdateImageSizeText();
             MarkDirty();
-            StatusText = $"已插入圖片：{image.FileName}";
+            StatusText = $"已插入圖片：{image.FileName}（{image.SizeLabel}）";
         }
         catch (Exception ex)
         {
             StatusText = $"插入圖片失敗：{ex.Message}";
         }
+    }
+
+    // ─── Image resize ───────────────────────────────────────
+
+    private bool RequireSelectedImage()
+    {
+        if (SelectedImage is not null)
+            return true;
+        // Fallback: selected block is image
+        if (SelectedBlock is ImageBlock img)
+        {
+            SelectedImage = img;
+            return true;
+        }
+
+        StatusText = "請先點選圖片，再調整大小。";
+        return false;
+    }
+
+    [RelayCommand]
+    private void ImageEnlarge()
+    {
+        if (!RequireSelectedImage())
+            return;
+        PushUndo();
+        SelectedImage!.ResizeByFactor(1.15);
+        UpdateImageSizeText();
+        MarkDirty();
+        StatusText = $"圖片放大：{SelectedImage.SizeLabel}";
+    }
+
+    [RelayCommand]
+    private void ImageShrink()
+    {
+        if (!RequireSelectedImage())
+            return;
+        PushUndo();
+        SelectedImage!.ResizeByFactor(1 / 1.15);
+        UpdateImageSizeText();
+        MarkDirty();
+        StatusText = $"圖片縮小：{SelectedImage.SizeLabel}";
+    }
+
+    [RelayCommand]
+    private void ImageResetSize()
+    {
+        if (!RequireSelectedImage())
+            return;
+        PushUndo();
+        var img = SelectedImage!;
+        // Prefer natural width capped at MaxDisplayWidth
+        var target = img.PixelWidth > 0
+            ? Math.Min(ImageBlock.MaxDisplayWidth, img.PixelWidth)
+            : 400;
+        img.ResizeToWidth(target);
+        UpdateImageSizeText();
+        MarkDirty();
+        StatusText = $"圖片重設大小：{img.SizeLabel}";
+    }
+
+    [RelayCommand]
+    private void ImageFitPage()
+    {
+        if (!RequireSelectedImage())
+            return;
+        PushUndo();
+        SelectedImage!.ResizeToWidth(ImageBlock.MaxDisplayWidth);
+        UpdateImageSizeText();
+        MarkDirty();
+        StatusText = $"圖片符合頁寬：{SelectedImage.SizeLabel}";
+    }
+
+    [RelayCommand]
+    private void ImageSetWidth(string widthText)
+    {
+        if (!RequireSelectedImage())
+            return;
+        if (!double.TryParse(widthText, out var w) || w <= 0)
+        {
+            StatusText = "請輸入有效的寬度（像素）。";
+            return;
+        }
+
+        PushUndo();
+        SelectedImage!.ResizeToWidth(w);
+        UpdateImageSizeText();
+        MarkDirty();
+        StatusText = $"圖片寬度：{SelectedImage.SizeLabel}";
     }
 
     [RelayCommand]
