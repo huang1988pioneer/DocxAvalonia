@@ -1,0 +1,339 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:DocxAvalonia.ViewModels"
+        xmlns:models="using:DocxAvalonia.Models"
+        xmlns:conv="using:DocxAvalonia.Converters"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        x:Class="DocxAvalonia.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="{Binding WindowTitle}"
+        Width="1200"
+        Height="800"
+        MinWidth="860"
+        MinHeight="560"
+        DragDrop.AllowDrop="True">
+
+    <Design.DataContext>
+        <vm:MainViewModel />
+    </Design.DataContext>
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
+        <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenDocumentCommand}" />
+        <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveDocumentCommand}" />
+        <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveDocumentAsCommand}" />
+        <KeyBinding Gesture="Ctrl+B" Command="{Binding ToggleBoldCommand}" />
+        <KeyBinding Gesture="Ctrl+I" Command="{Binding ToggleItalicCommand}" />
+        <KeyBinding Gesture="Ctrl+U" Command="{Binding ToggleUnderlineCommand}" />
+        <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+        <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
+        <KeyBinding Gesture="Ctrl+F" Command="{Binding ToggleFindPanelCommand}" />
+        <KeyBinding Gesture="Ctrl+Enter" Command="{Binding InsertParagraphCommand}" />
+    </Window.KeyBindings>
+
+    <DockPanel>
+        <!-- ═══ Ribbon ═══ -->
+        <Border DockPanel.Dock="Top"
+                Background="#F3F3F3"
+                BorderBrush="#D0D0D0"
+                BorderThickness="0,0,0,1">
+            <StackPanel>
+                <!-- Quick file bar -->
+                <Border Background="#2B579A" Padding="10,6">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="DocxAvalonia"
+                                       Foreground="White"
+                                       FontWeight="Bold"
+                                       FontSize="14"
+                                       VerticalAlignment="Center"
+                                       Margin="4,0,12,0" />
+                            <Button Content="新增" Command="{Binding NewDocumentCommand}"
+                                    Padding="10,5" Background="#3D6DB5" Foreground="White" BorderThickness="0" />
+                            <Button Content="開啟" Command="{Binding OpenDocumentCommand}"
+                                    Padding="10,5" Background="#3D6DB5" Foreground="White" BorderThickness="0" />
+                            <Button Content="儲存" Command="{Binding SaveDocumentCommand}"
+                                    Padding="10,5" Background="#3D6DB5" Foreground="White" BorderThickness="0" />
+                            <Button Content="另存新檔" Command="{Binding SaveDocumentAsCommand}"
+                                    Padding="10,5" Background="#3D6DB5" Foreground="White" BorderThickness="0" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding FileName}"
+                                   Foreground="#D6E4F5"
+                                   VerticalAlignment="Center"
+                                   Margin="12,0"
+                                   TextTrimming="CharacterEllipsis" />
+                    </Grid>
+                </Border>
+
+                <!-- Tool groups -->
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                    <StackPanel Orientation="Horizontal" Spacing="0" Margin="6,4">
+
+                        <!-- 剪貼簿 -->
+                        <Border Classes="ribbon-group">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <Button Content="剪下" Command="{Binding CutCommand}" Classes="ribbon-btn" ToolTip.Tip="剪下" />
+                                    <Button Content="複製" Command="{Binding CopyCommand}" Classes="ribbon-btn" ToolTip.Tip="複製" />
+                                    <Button Content="貼上" Command="{Binding PasteCommand}" Classes="ribbon-btn" ToolTip.Tip="貼上" />
+                                </StackPanel>
+                                <TextBlock Text="剪貼簿" Classes="ribbon-label" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Width="1" Background="#D0D0D0" Margin="4,6" />
+
+                        <!-- 字型 -->
+                        <Border Classes="ribbon-group">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <Button Content="B" FontWeight="Bold" Command="{Binding ToggleBoldCommand}"
+                                            Classes="ribbon-btn" Width="34" ToolTip.Tip="粗體 (Ctrl+B)" />
+                                    <Button Content="I" FontStyle="Italic" Command="{Binding ToggleItalicCommand}"
+                                            Classes="ribbon-btn" Width="34" ToolTip.Tip="斜體 (Ctrl+I)" />
+                                    <Button Content="U" Command="{Binding ToggleUnderlineCommand}"
+                                            Classes="ribbon-btn" Width="34" ToolTip.Tip="底線 (Ctrl+U)" />
+                                    <Button Content="A-" Command="{Binding DecreaseFontSizeCommand}"
+                                            Classes="ribbon-btn" Width="36" ToolTip.Tip="縮小字級" />
+                                    <Button Content="A+" Command="{Binding IncreaseFontSizeCommand}"
+                                            Classes="ribbon-btn" Width="36" ToolTip.Tip="放大字級" />
+                                    <ComboBox Width="72"
+                                              ItemsSource="{Binding FontSizeOptions}"
+                                              SelectedItem="{Binding SelectedParagraph.FontSize, Mode=TwoWay}"
+                                              IsEnabled="{Binding SelectedParagraph, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                              VerticalAlignment="Center" />
+                                </StackPanel>
+                                <TextBlock Text="字型" Classes="ribbon-label" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Width="1" Background="#D0D0D0" Margin="4,6" />
+
+                        <!-- 段落 -->
+                        <Border Classes="ribbon-group">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <Button Content="左" Command="{Binding SetAlignmentCommand}" CommandParameter="Left"
+                                            Classes="ribbon-btn" Width="34" ToolTip.Tip="靠左對齊" />
+                                    <Button Content="中" Command="{Binding SetAlignmentCommand}" CommandParameter="Center"
+                                            Classes="ribbon-btn" Width="34" ToolTip.Tip="置中" />
+                                    <Button Content="右" Command="{Binding SetAlignmentCommand}" CommandParameter="Right"
+                                            Classes="ribbon-btn" Width="34" ToolTip.Tip="靠右對齊" />
+                                    <Button Content="兩端" Command="{Binding SetAlignmentCommand}" CommandParameter="Justify"
+                                            Classes="ribbon-btn" Width="40" ToolTip.Tip="左右對齊" />
+                                    <Button Content="• 清單" Command="{Binding ToggleBulletListCommand}"
+                                            Classes="ribbon-btn" ToolTip.Tip="項目符號" />
+                                    <Button Content="1. 編號" Command="{Binding ToggleNumberedListCommand}"
+                                            Classes="ribbon-btn" ToolTip.Tip="編號清單" />
+                                </StackPanel>
+                                <TextBlock Text="段落" Classes="ribbon-label" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Width="1" Background="#D0D0D0" Margin="4,6" />
+
+                        <!-- 樣式 -->
+                        <Border Classes="ribbon-group">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <Button Content="內文" Command="{Binding SetStyleCommand}" CommandParameter="Normal"
+                                            Classes="ribbon-btn" />
+                                    <Button Content="標題1" Command="{Binding SetStyleCommand}" CommandParameter="Heading1"
+                                            Classes="ribbon-btn" FontWeight="Bold" FontSize="13" />
+                                    <Button Content="標題2" Command="{Binding SetStyleCommand}" CommandParameter="Heading2"
+                                            Classes="ribbon-btn" FontWeight="SemiBold" />
+                                    <Button Content="標題3" Command="{Binding SetStyleCommand}" CommandParameter="Heading3"
+                                            Classes="ribbon-btn" FontWeight="SemiBold" FontSize="12" />
+                                </StackPanel>
+                                <TextBlock Text="樣式" Classes="ribbon-label" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Width="1" Background="#D0D0D0" Margin="4,6" />
+
+                        <!-- 插入 -->
+                        <Border Classes="ribbon-group">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <Button Content="+ 段落" Command="{Binding InsertParagraphCommand}"
+                                            Classes="ribbon-btn" ToolTip.Tip="插入段落 (Ctrl+Enter)" />
+                                    <Button Content="+ 標題" Command="{Binding InsertHeadingCommand}"
+                                            Classes="ribbon-btn" />
+                                    <Button Content="+ 表格" Command="{Binding InsertTableCommand}"
+                                            Classes="ribbon-btn" ToolTip.Tip="插入 3×3 表格" />
+                                    <Button Content="刪除區塊" Command="{Binding DeleteBlockCommand}"
+                                            Classes="ribbon-btn" />
+                                </StackPanel>
+                                <TextBlock Text="插入" Classes="ribbon-label" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Width="1" Background="#D0D0D0" Margin="4,6" />
+
+                        <!-- 編輯 / 檢視 -->
+                        <Border Classes="ribbon-group">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <Button Content="復原" Command="{Binding UndoCommand}" Classes="ribbon-btn" ToolTip.Tip="Ctrl+Z" />
+                                    <Button Content="重做" Command="{Binding RedoCommand}" Classes="ribbon-btn" ToolTip.Tip="Ctrl+Y" />
+                                    <Button Content="尋找" Command="{Binding ToggleFindPanelCommand}" Classes="ribbon-btn" ToolTip.Tip="Ctrl+F" />
+                                    <Button Content="−" Command="{Binding ZoomOutCommand}" Classes="ribbon-btn" Width="30" />
+                                    <TextBlock Text="{Binding ZoomText}" VerticalAlignment="Center" Width="48" TextAlignment="Center" />
+                                    <Button Content="+" Command="{Binding ZoomInCommand}" Classes="ribbon-btn" Width="30" />
+                                    <Button Content="100%" Command="{Binding ZoomResetCommand}" Classes="ribbon-btn" />
+                                </StackPanel>
+                                <TextBlock Text="編輯 / 檢視" Classes="ribbon-label" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Find panel -->
+                <Border IsVisible="{Binding ShowFindPanel}"
+                        Background="#FFF8E1"
+                        BorderBrush="#FFE082"
+                        BorderThickness="0,1,0,0"
+                        Padding="12,8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="尋找" VerticalAlignment="Center" />
+                        <TextBox Width="180" Text="{Binding FindText}" Watermark="搜尋文字…" />
+                        <TextBlock Text="取代為" VerticalAlignment="Center" />
+                        <TextBox Width="160" Text="{Binding ReplaceText}" Watermark="取代文字…" />
+                        <Button Content="下一個" Command="{Binding FindNextCommand}" Padding="10,5" />
+                        <Button Content="取代" Command="{Binding ReplaceOneCommand}" Padding="10,5" />
+                        <Button Content="全部取代" Command="{Binding ReplaceAllCommand}" Padding="10,5" />
+                        <Button Content="關閉" Command="{Binding ToggleFindPanelCommand}" Padding="10,5" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- ═══ Status bar ═══ -->
+        <Border DockPanel.Dock="Bottom"
+                Background="#2B579A"
+                Padding="12,5">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <TextBlock Text="{Binding StatusText}"
+                           Foreground="White"
+                           FontSize="12"
+                           TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding StatisticsText}"
+                           Foreground="#D6E4F5"
+                           FontSize="12"
+                           Margin="16,0"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2"
+                           Text="{Binding ZoomText}"
+                           Foreground="#D6E4F5"
+                           FontSize="12"
+                           VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+
+        <!-- ═══ Editor surface ═══ -->
+        <Border Background="#BFBFBF">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto"
+                          AllowAutoHide="False"
+                          Padding="0">
+                <Border Background="White"
+                        Margin="32,24"
+                        Padding="56,48"
+                        MinWidth="680"
+                        MaxWidth="900"
+                        HorizontalAlignment="Center"
+                        BoxShadow="0 2 12 0 #40000000"
+                        RenderTransformOrigin="0.5,0">
+                    <Border.RenderTransform>
+                        <ScaleTransform ScaleX="{Binding Zoom}" ScaleY="{Binding Zoom}" />
+                    </Border.RenderTransform>
+
+                    <ItemsControl ItemsSource="{Binding Document.Blocks}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="models:DocumentBlock">
+                                <ContentControl Content="{Binding}">
+                                    <ContentControl.DataTemplates>
+                                        <!-- Paragraph editor -->
+                                        <DataTemplate DataType="models:ParagraphBlock">
+                                            <Border Margin="0,0,0,6"
+                                                    Padding="4,2"
+                                                    Background="Transparent"
+                                                    Cursor="Hand"
+                                                    PointerPressed="OnBlockPointerPressed">
+                                                <Grid ColumnDefinitions="Auto,*">
+                                                    <TextBlock Grid.Column="0"
+                                                               Text="{Binding ListKind, Converter={x:Static conv:EditorConverters.ListPrefix}}"
+                                                               FontSize="{Binding FontSize}"
+                                                               VerticalAlignment="Top"
+                                                               Margin="0,6,0,0"
+                                                               Foreground="#333" />
+                                                    <TextBox Grid.Column="1"
+                                                             Text="{Binding Text, Mode=TwoWay}"
+                                                             FontSize="{Binding FontSize}"
+                                                             FontWeight="{Binding IsBold, Converter={x:Static conv:EditorConverters.FontWeightFromBool}}"
+                                                             FontStyle="{Binding IsItalic, Converter={x:Static conv:EditorConverters.FontStyleFromBool}}"
+                                                             TextAlignment="{Binding Alignment, Converter={x:Static conv:EditorConverters.AlignmentFromKind}}"
+                                                             AcceptsReturn="True"
+                                                             TextWrapping="Wrap"
+                                                             BorderThickness="0"
+                                                             Background="Transparent"
+                                                             Padding="2,4"
+                                                             MinHeight="28"
+                                                             GotFocus="OnEditorGotFocus" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+
+                                        <!-- Table editor -->
+                                        <DataTemplate DataType="models:TableBlock">
+                                            <Border Margin="0,8,0,16"
+                                                    BorderBrush="#CCCCCC"
+                                                    BorderThickness="1"
+                                                    PointerPressed="OnBlockPointerPressed">
+                                                <ItemsControl ItemsSource="{Binding Rows}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate DataType="models:TableRowBlock">
+                                                            <ItemsControl ItemsSource="{Binding Cells}">
+                                                                <ItemsControl.ItemsPanel>
+                                                                    <ItemsPanelTemplate>
+                                                                        <UniformGrid Rows="1" />
+                                                                    </ItemsPanelTemplate>
+                                                                </ItemsControl.ItemsPanel>
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate DataType="models:TableCellBlock">
+                                                                        <Border BorderBrush="#DDDDDD"
+                                                                                BorderThickness="0.5"
+                                                                                Padding="6,4"
+                                                                                MinHeight="32"
+                                                                                Background="White">
+                                                                            <TextBox Text="{Binding Text, Mode=TwoWay}"
+                                                                                     BorderThickness="0"
+                                                                                     Background="Transparent"
+                                                                                     TextWrapping="Wrap"
+                                                                                     AcceptsReturn="True"
+                                                                                     MinHeight="24" />
+                                                                        </Border>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ContentControl.DataTemplates>
+                                </ContentControl>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
+            </ScrollViewer>
+        </Border>
+    </DockPanel>
+</Window>

@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <RootNamespace>DocxAvalonia</RootNamespace>
+    <!--
+      AssemblyName 使用 WordViewHost：
+      舊名 DocxAvalonia / 舊 bin 輸出曾被 Smart App Control 封鎖 (0x800711C7)。
+    -->
+    <AssemblyName>WordViewHost</AssemblyName>
+    <!-- 產生可直接雙擊的 .exe（不需批次檔） -->
+    <UseAppHost>true</UseAppHost>
+    <ApplicationTitle>DocxAvalonia Word Preview</ApplicationTitle>
+    <DefaultItemExcludes>$(DefaultItemExcludes);tools\**;_bisect\**;bin\**;publish\**</DefaultItemExcludes>
+    <!-- 輸出到未被封鎖的目錄，避免沿用已中毒的 bin\Debug 路徑 -->
+    <OutputPath>$(MSBuildProjectDirectory)\app-out\$(Configuration)\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+    <AvaloniaResource Include="Styles\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.2.5" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.2.5" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.5" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.5" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="DocumentFormat.OpenXml" Version="3.2.0" />
+  </ItemGroup>
+</Project>

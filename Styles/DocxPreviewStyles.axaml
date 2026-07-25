@@ -1,0 +1,125 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Style Selector="Border.docx-page">
+        <Setter Property="Background" Value="White" />
+        <Setter Property="BoxShadow" Value="0 2 12 0 #33000000" />
+        <Setter Property="CornerRadius" Value="2" />
+        <Setter Property="Padding" Value="72,72,72,72" />
+        <Setter Property="Margin" Value="24" />
+        <Setter Property="MinWidth" Value="680" />
+        <Setter Property="MaxWidth" Value="820" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="TextBlock.docx-heading1">
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Margin" Value="0,16,0,10" />
+        <Setter Property="Foreground" Value="#1A1A1A" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style Selector="TextBlock.docx-heading2">
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,14,0,8" />
+        <Setter Property="Foreground" Value="#222222" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style Selector="TextBlock.docx-heading3">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,12,0,6" />
+        <Setter Property="Foreground" Value="#2A2A2A" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style Selector="TextBlock.docx-paragraph">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="LineHeight" Value="22" />
+        <Setter Property="Margin" Value="0,0,0,10" />
+        <Setter Property="Foreground" Value="#242424" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style Selector="TextBlock.docx-list-item">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="LineHeight" Value="22" />
+        <Setter Property="Margin" Value="24,0,0,6" />
+        <Setter Property="Foreground" Value="#242424" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style Selector="Border.docx-table">
+        <Setter Property="BorderBrush" Value="#CCCCCC" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Margin" Value="0,8,0,16" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+
+    <Style Selector="Border.docx-table-cell">
+        <Setter Property="BorderBrush" Value="#DDDDDD" />
+        <Setter Property="BorderThickness" Value="0.5" />
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="Background" Value="White" />
+    </Style>
+
+    <Style Selector="Border.docx-table-header-cell">
+        <Setter Property="BorderBrush" Value="#CCCCCC" />
+        <Setter Property="BorderThickness" Value="0.5" />
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="Background" Value="#F0F4F8" />
+    </Style>
+
+    <Style Selector="Image.docx-image">
+        <Setter Property="Margin" Value="0,8,0,12" />
+        <Setter Property="MaxWidth" Value="640" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="Stretch" Value="Uniform" />
+    </Style>
+
+    <Style Selector="TextBlock.docx-empty">
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="Foreground" Value="#666666" />
+        <Setter Property="TextAlignment" Value="Center" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="MaxWidth" Value="420" />
+        <Setter Property="Margin" Value="32" />
+    </Style>
+
+    <!-- Ribbon -->
+    <Style Selector="Border.ribbon-group">
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="Margin" Value="2,0" />
+    </Style>
+
+    <Style Selector="Button.ribbon-btn">
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="CornerRadius" Value="3" />
+    </Style>
+
+    <Style Selector="Button.ribbon-btn:pointerover">
+        <Setter Property="Background" Value="#E5EFFF" />
+        <Setter Property="BorderBrush" Value="#A3C1E8" />
+    </Style>
+
+    <Style Selector="Button.ribbon-btn:pressed">
+        <Setter Property="Background" Value="#C5D8F0" />
+    </Style>
+
+    <Style Selector="TextBlock.ribbon-label">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="#666666" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="0,4,0,0" />
+    </Style>
+
+</Styles>
