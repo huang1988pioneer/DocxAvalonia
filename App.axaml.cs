@@ -30,12 +30,19 @@ public partial class App : Application
                 DataContext = vm,
             };
 
-            // 支援：WordViewHost.exe "C:\path\file.docx"
+            // 支援：DocxAvalonia.exe "C:\path\file.docx"
             if (initialPath is not null)
             {
                 desktop.MainWindow.Opened += async (_, _) =>
                 {
-                    await vm.LoadDocumentAsync(initialPath);
+                    try
+                    {
+                        await vm.LoadDocumentAsync(initialPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        vm.StatusText = $"開啟失敗：{ex.Message}";
+                    }
                 };
             }
         }

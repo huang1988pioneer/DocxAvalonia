@@ -10,6 +10,6 @@
 
     <Application.Styles>
         <FluentTheme />
-        <StyleInclude Source="avares://WordViewHost/Styles/DocxPreviewStyles.axaml" />
+        <StyleInclude Source="avares://DocxAvalonia/Styles/DocxPreviewStyles.axaml" />
     </Application.Styles>
 </Application>

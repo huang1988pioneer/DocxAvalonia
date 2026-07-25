@@ -59,13 +59,31 @@
                                     Padding="10,5" Background="#3D6DB5" Foreground="White" BorderThickness="0" />
                             <Button Content="另存新檔" Command="{Binding SaveDocumentAsCommand}"
                                     Padding="10,5" Background="#3D6DB5" Foreground="White" BorderThickness="0" />
+                            <Border Background="#1F4A86" CornerRadius="4" Padding="8,4" Margin="8,0,0,0"
+                                    VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <ToggleSwitch IsChecked="{Binding AutoSaveEnabled}"
+                                                  OnContent="開"
+                                                  OffContent="關"
+                                                  VerticalAlignment="Center"
+                                                  ToolTip.Tip="開啟後每 60 秒自動儲存（需已有檔案路徑）" />
+                                    <TextBlock Text="自動儲存(60秒)"
+                                               Foreground="White"
+                                               FontSize="12"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
-                        <TextBlock Grid.Column="1"
-                                   Text="{Binding FileName}"
-                                   Foreground="#D6E4F5"
-                                   VerticalAlignment="Center"
-                                   Margin="12,0"
-                                   TextTrimming="CharacterEllipsis" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding AutoSaveStatusText}"
+                                       Foreground="#B8D0F0"
+                                       FontSize="12"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding FileName}"
+                                       Foreground="#D6E4F5"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
                     </Grid>
                 </Border>
 
@@ -165,6 +183,8 @@
                                             Classes="ribbon-btn" />
                                     <Button Content="+ 表格" Command="{Binding InsertTableCommand}"
                                             Classes="ribbon-btn" ToolTip.Tip="插入 3×3 表格" />
+                                    <Button Content="+ 圖片" Command="{Binding InsertImageCommand}"
+                                            Classes="ribbon-btn" ToolTip.Tip="插入圖片" />
                                     <Button Content="刪除區塊" Command="{Binding DeleteBlockCommand}"
                                             Classes="ribbon-btn" />
                                 </StackPanel>
@@ -216,19 +236,25 @@
         <Border DockPanel.Dock="Bottom"
                 Background="#2B579A"
                 Padding="12,5">
-            <Grid ColumnDefinitions="*,Auto,Auto">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
                 <TextBlock Text="{Binding StatusText}"
                            Foreground="White"
                            FontSize="12"
                            TextTrimming="CharacterEllipsis"
                            VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1"
+                           Text="{Binding AutoSaveStatusText}"
+                           Foreground="#B8D0F0"
+                           FontSize="12"
+                           Margin="12,0"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2"
                            Text="{Binding StatisticsText}"
                            Foreground="#D6E4F5"
                            FontSize="12"
-                           Margin="16,0"
+                           Margin="12,0"
                            VerticalAlignment="Center" />
-                <TextBlock Grid.Column="2"
+                <TextBlock Grid.Column="3"
                            Text="{Binding ZoomText}"
                            Foreground="#D6E4F5"
                            FontSize="12"
@@ -325,6 +351,40 @@
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
+                                            </Border>
+                                        </DataTemplate>
+
+                                        <!-- Image display -->
+                                        <DataTemplate DataType="models:ImageBlock">
+                                            <Border Margin="0,8,0,12"
+                                                    Padding="6"
+                                                    Background="#FAFAFA"
+                                                    BorderBrush="#E0E0E0"
+                                                    BorderThickness="1"
+                                                    CornerRadius="2"
+                                                    PointerPressed="OnBlockPointerPressed"
+                                                    HorizontalAlignment="Left"
+                                                    MaxWidth="740">
+                                                <StackPanel Spacing="4">
+                                                    <Image Source="{Binding Preview}"
+                                                           MaxWidth="{Binding DisplayWidth}"
+                                                           Stretch="Uniform"
+                                                           HorizontalAlignment="Left"
+                                                           IsVisible="{Binding HasPreview}" />
+                                                    <Border IsVisible="{Binding IsDecodeFailed}"
+                                                            Background="#FFF3E0"
+                                                            Padding="12,8"
+                                                            CornerRadius="2">
+                                                        <TextBlock Text="（此圖片格式無法預覽，儲存時仍會保留）"
+                                                                   FontSize="12"
+                                                                   Foreground="#E65100"
+                                                                   TextWrapping="Wrap" />
+                                                    </Border>
+                                                    <TextBlock Text="{Binding FileName}"
+                                                               FontSize="11"
+                                                               Foreground="#888888"
+                                                               IsVisible="{Binding FileName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                                </StackPanel>
                                             </Border>
                                         </DataTemplate>
                                     </ContentControl.DataTemplates>

@@ -31,6 +31,8 @@ Desktop.ini
 ## Tools
 tools/SampleGen/bin/
 tools/SampleGen/obj/
+tools/ImageDocGen/bin/
+tools/ImageDocGen/obj/
 
 ## Logs / temp
 *.log

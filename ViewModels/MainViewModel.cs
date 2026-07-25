@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input.Platform;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DocxAvalonia.Models;
@@ -15,9 +16,12 @@ namespace DocxAvalonia.ViewModels;
 
 public partial class MainViewModel : ViewModelBase
 {
+    public const int AutoSaveIntervalSeconds = 60;
+
     private readonly DocxDocumentService _documentService = new();
     private readonly Stack<string> _undoStack = new();
     private readonly Stack<string> _redoStack = new();
+    private readonly DispatcherTimer _autoSaveTimer;
     private bool _suspendDirty;
 
     [ObservableProperty]
@@ -40,6 +44,13 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _isDirty;
+
+    /// <summary>When true, dirty documents with a known path are saved every 60 seconds.</summary>
+    [ObservableProperty]
+    private bool _autoSaveEnabled;
+
+    [ObservableProperty]
+    private string _autoSaveStatusText = "自動儲存：關";
 
     [ObservableProperty]
     private WordDocument? _document;
@@ -76,12 +87,54 @@ public partial class MainViewModel : ViewModelBase
 
     public MainViewModel()
     {
+        _autoSaveTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(AutoSaveIntervalSeconds),
+        };
+        _autoSaveTimer.Tick += OnAutoSaveTick;
+
         NewDocument();
     }
 
     partial void OnZoomChanged(double value)
     {
         ZoomText = $"{(int)Math.Round(value * 100)}%";
+    }
+
+    partial void OnAutoSaveEnabledChanged(bool value)
+    {
+        if (value)
+        {
+            _autoSaveTimer.Start();
+            AutoSaveStatusText = $"自動儲存：每 {AutoSaveIntervalSeconds} 秒";
+            StatusText = $"已開啟自動儲存（每 {AutoSaveIntervalSeconds} 秒；需已有儲存路徑）";
+        }
+        else
+        {
+            _autoSaveTimer.Stop();
+            AutoSaveStatusText = "自動儲存：關";
+            StatusText = "已關閉自動儲存";
+        }
+    }
+
+    private async void OnAutoSaveTick(object? sender, EventArgs e)
+    {
+        if (!AutoSaveEnabled || Document is null || IsBusy || !IsDirty)
+            return;
+
+        if (string.IsNullOrWhiteSpace(FilePath))
+        {
+            StatusText = "自動儲存略過：請先「另存新檔」指定路徑";
+            return;
+        }
+
+        await SaveToPathAsync(FilePath, isAutoSave: true);
+    }
+
+    [RelayCommand]
+    private void ToggleAutoSave()
+    {
+        AutoSaveEnabled = !AutoSaveEnabled;
     }
 
     partial void OnSelectedBlockChanged(DocumentBlock? value)
@@ -174,6 +227,15 @@ public partial class MainViewModel : ViewModelBase
                     Type = "t",
                     Rows = t.Rows.Select(r => r.Cells.Select(c => c.Text).ToList()).ToList(),
                 },
+                ImageBlock img => new BlockDto
+                {
+                    Type = "i",
+                    Text = img.FileName,
+                    ContentType = img.ContentType,
+                    ImageBase64 = Convert.ToBase64String(img.ImageBytes),
+                    DisplayWidth = img.DisplayWidth,
+                    DisplayHeight = img.DisplayHeight,
+                },
                 _ => new BlockDto { Type = "p" },
             }).ToList(),
         };
@@ -199,6 +261,17 @@ public partial class MainViewModel : ViewModelBase
                 }
 
                 doc.Blocks.Add(table);
+            }
+            else if (b.Type == "i" && !string.IsNullOrEmpty(b.ImageBase64))
+            {
+                doc.Blocks.Add(new ImageBlock
+                {
+                    ImageBytes = Convert.FromBase64String(b.ImageBase64),
+                    ContentType = b.ContentType ?? "image/png",
+                    FileName = b.Text,
+                    DisplayWidth = b.DisplayWidth > 0 ? b.DisplayWidth : 400,
+                    DisplayHeight = b.DisplayHeight,
+                });
             }
             else
             {
@@ -347,11 +420,35 @@ public partial class MainViewModel : ViewModelBase
         StatusText = "正在開啟…";
         try
         {
+            // Parse OpenXML off UI thread (bytes only — no Avalonia Bitmap yet).
             var doc = await Task.Run(() => _documentService.Load(path));
+
+            // Decode previews on UI thread to avoid Skia/threading crashes.
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                foreach (var image in doc.Blocks.OfType<ImageBlock>())
+                {
+                    try
+                    {
+                        image.EnsurePreview();
+                    }
+                    catch
+                    {
+                        // Keep document open even if one image fails.
+                    }
+                }
+            });
+
             AttachDocument(doc, path, dirty: false);
+
+            var imageCount = doc.Blocks.OfType<ImageBlock>().Count();
+            var shown = doc.Blocks.OfType<ImageBlock>().Count(i => i.HasPreview);
+            if (imageCount > 0)
+                StatusText = $"已開啟：{FileName}（圖片 {shown}/{imageCount}）";
         }
         catch (Exception ex)
         {
+            Debug.WriteLine(ex);
             StatusText = $"開啟失敗：{ex.Message}";
         }
         finally
@@ -372,7 +469,7 @@ public partial class MainViewModel : ViewModelBase
             return;
         }
 
-        await SaveToPathAsync(FilePath);
+        await SaveToPathAsync(FilePath, isAutoSave: false);
     }
 
     [RelayCommand]
@@ -405,16 +502,17 @@ public partial class MainViewModel : ViewModelBase
         if (!path.EndsWith(".docx", StringComparison.OrdinalIgnoreCase))
             path += ".docx";
 
-        await SaveToPathAsync(path);
+        await SaveToPathAsync(path, isAutoSave: false);
     }
 
-    private async Task SaveToPathAsync(string path)
+    private async Task SaveToPathAsync(string path, bool isAutoSave)
     {
         if (Document is null)
             return;
 
         IsBusy = true;
-        StatusText = "正在儲存…";
+        if (!isAutoSave)
+            StatusText = "正在儲存…";
         try
         {
             var doc = Document;
@@ -422,11 +520,16 @@ public partial class MainViewModel : ViewModelBase
             FilePath = path;
             FileName = Path.GetFileName(path);
             IsDirty = false;
-            StatusText = $"已儲存：{FileName}";
+            var time = DateTime.Now.ToString("HH:mm:ss");
+            StatusText = isAutoSave
+                ? $"自動儲存完成 {time}：{FileName}"
+                : $"已儲存：{FileName}";
         }
         catch (Exception ex)
         {
-            StatusText = $"儲存失敗：{ex.Message}";
+            StatusText = isAutoSave
+                ? $"自動儲存失敗：{ex.Message}"
+                : $"儲存失敗：{ex.Message}";
         }
         finally
         {
@@ -703,6 +806,64 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task InsertImageAsync()
+    {
+        if (Document is null)
+            return;
+
+        var window = GetMainWindow();
+        if (window is null)
+            return;
+
+        var files = await window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "插入圖片",
+            AllowMultiple = false,
+            FileTypeFilter =
+            [
+                new FilePickerFileType("圖片")
+                {
+                    Patterns = ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp", "*.webp"],
+                    MimeTypes = ["image/*"],
+                },
+                AllFileType(),
+            ],
+        });
+        if (files.Count == 0)
+            return;
+
+        var path = files[0].TryGetLocalPath();
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            StatusText = "無法讀取圖片路徑。";
+            return;
+        }
+
+        try
+        {
+            PushUndo();
+            var image = ImageBlock.FromFile(path);
+            if (image.Preview is null)
+            {
+                StatusText = "無法解碼此圖片格式。";
+                return;
+            }
+
+            var index = SelectedBlock is null ? Document.Blocks.Count : Document.Blocks.IndexOf(SelectedBlock) + 1;
+            if (index < 0 || index > Document.Blocks.Count)
+                index = Document.Blocks.Count;
+            Document.Blocks.Insert(index, image);
+            SelectedBlock = image;
+            MarkDirty();
+            StatusText = $"已插入圖片：{image.FileName}";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"插入圖片失敗：{ex.Message}";
+        }
+    }
+
+    [RelayCommand]
     private void InsertHeading()
     {
         if (Document is null)
@@ -901,5 +1062,9 @@ public partial class MainViewModel : ViewModelBase
         public double FontSize { get; set; }
         public string? List { get; set; }
         public List<List<string>>? Rows { get; set; }
+        public string? ContentType { get; set; }
+        public string? ImageBase64 { get; set; }
+        public double DisplayWidth { get; set; }
+        public double DisplayHeight { get; set; }
     }
 }

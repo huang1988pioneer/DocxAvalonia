@@ -4,10 +4,10 @@ using DocumentFormat.OpenXml.Wordprocessing;
 
 var outputPath = args.Length > 0
     ? args[0]
-    : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "Samples", "sample.docx"));
+    : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "Samples", "demo.docx"));
 
 // Prefer repo Samples folder when running from tools/SampleGen
-var repoSample = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "Samples", "sample.docx"));
+var repoSample = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "Samples", "demo.docx"));
 if (args.Length == 0 && Directory.Exists(Path.GetDirectoryName(repoSample)!))
     outputPath = repoSample;
 

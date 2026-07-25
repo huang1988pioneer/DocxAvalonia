@@ -4,10 +4,13 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using DocxAvalonia.Models;
+using A = DocumentFormat.OpenXml.Drawing;
+using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
+using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
 
 namespace DocxAvalonia.Services;
 
-/// <summary>Load / save editable document models as .docx.</summary>
+/// <summary>Load / save editable document models as .docx (text, tables, images).</summary>
 public sealed class DocxDocumentService
 {
     public WordDocument Load(string path)
@@ -38,7 +41,8 @@ public sealed class DocxDocumentService
             switch (element)
             {
                 case Paragraph paragraph:
-                    doc.Blocks.Add(ConvertParagraph(paragraph, numbering));
+                    foreach (var block in ConvertParagraphWithImages(paragraph, numbering, main))
+                        doc.Blocks.Add(block);
                     break;
                 case Table table:
                     doc.Blocks.Add(ConvertTable(table));
@@ -67,6 +71,7 @@ public sealed class DocxDocumentService
         var body = main.Document.Body!;
         var bulletCount = 0;
         var numberCount = 0;
+        var imageIndex = 0;
 
         foreach (var block in model.Blocks)
         {
@@ -77,6 +82,9 @@ public sealed class DocxDocumentService
                     break;
                 case TableBlock t:
                     body.AppendChild(CreateTable(t));
+                    break;
+                case ImageBlock img:
+                    body.AppendChild(CreateImageParagraph(main, img, ref imageIndex));
                     break;
             }
         }
@@ -113,7 +121,23 @@ public sealed class DocxDocumentService
         return map;
     }
 
-    private static ParagraphBlock ConvertParagraph(Paragraph paragraph, Dictionary<int, ListKind> numbering)
+    private static IEnumerable<DocumentBlock> ConvertParagraphWithImages(
+        Paragraph paragraph,
+        Dictionary<int, ListKind> numbering,
+        MainDocumentPart main)
+    {
+        var images = ExtractImages(paragraph, main).ToList();
+        var textBlock = ConvertParagraphText(paragraph, numbering);
+
+        // Emit text when there is content, or when there are no images (preserve blank lines).
+        if (!string.IsNullOrEmpty(textBlock.Text) || images.Count == 0)
+            yield return textBlock;
+
+        foreach (var image in images)
+            yield return image;
+    }
+
+    private static ParagraphBlock ConvertParagraphText(Paragraph paragraph, Dictionary<int, ListKind> numbering)
     {
         var sb = new StringBuilder();
         var bold = false;
@@ -154,7 +178,6 @@ public sealed class DocxDocumentService
                 fontSize ??= hp / 2.0;
         }
 
-        // Also collect hyperlink runs
         foreach (var hyperlink in paragraph.Elements<Hyperlink>())
         {
             foreach (var run in hyperlink.Elements<Run>())
@@ -213,6 +236,148 @@ public sealed class DocxDocumentService
                 _ => 14,
             },
             ListKind = listKind,
+        };
+    }
+
+    private static IEnumerable<ImageBlock> ExtractImages(Paragraph paragraph, MainDocumentPart main)
+    {
+        var seenRelIds = new HashSet<string>(StringComparer.Ordinal);
+
+        // DrawingML images (modern Word): inline + floating (anchor)
+        foreach (var drawing in paragraph.Descendants<Drawing>())
+        {
+            ImageBlock? block = null;
+            try
+            {
+                block = TryExtractDrawingImage(drawing, main, seenRelIds);
+            }
+            catch
+            {
+                // Never let a single broken drawing crash the whole document load.
+            }
+
+            if (block is not null)
+                yield return block;
+        }
+
+        // VML fallback (older Word) — only if no DrawingML images found in this paragraph
+        if (seenRelIds.Count > 0)
+            yield break;
+
+        IEnumerable<DocumentFormat.OpenXml.Vml.ImageData> vmlList;
+        try
+        {
+            vmlList = paragraph.Descendants<DocumentFormat.OpenXml.Vml.ImageData>().ToList();
+        }
+        catch
+        {
+            yield break;
+        }
+
+        foreach (var vml in vmlList)
+        {
+            ImageBlock? block = null;
+            try
+            {
+                var relId = vml.RelationshipId?.Value;
+                if (string.IsNullOrEmpty(relId) || !seenRelIds.Add(relId))
+                    continue;
+                block = TryLoadImagePart(main, relId, 400, 0);
+            }
+            catch
+            {
+                // ignore
+            }
+
+            if (block is not null)
+                yield return block;
+        }
+    }
+
+    private static ImageBlock? TryExtractDrawingImage(Drawing drawing, MainDocumentPart main, HashSet<string> seenRelIds)
+    {
+        var blip = drawing.Descendants<A.Blip>().FirstOrDefault();
+        // Prefer embedded; skip external links (often not available offline).
+        var embedId = blip?.Embed?.Value;
+        if (string.IsNullOrEmpty(embedId))
+            return null;
+        if (!seenRelIds.Add(embedId))
+            return null;
+
+        double widthDip = 400;
+        double heightDip = 0;
+        try
+        {
+            var extent = drawing.Descendants<DW.Extent>().FirstOrDefault();
+            if (extent?.Cx?.Value is { } cx && cx > 0)
+            {
+                widthDip = cx / 914400.0 * 96.0;
+                if (extent.Cy?.Value is { } cy && cy > 0)
+                    heightDip = cy / 914400.0 * 96.0;
+            }
+        }
+        catch
+        {
+            // keep defaults
+        }
+
+        if (double.IsNaN(widthDip) || double.IsInfinity(widthDip) || widthDip <= 0)
+            widthDip = 400;
+        widthDip = Math.Clamp(widthDip, 40, 720);
+        if (double.IsNaN(heightDip) || double.IsInfinity(heightDip) || heightDip < 0)
+            heightDip = 0;
+
+        return TryLoadImagePart(main, embedId, widthDip, heightDip);
+    }
+
+    private static ImageBlock? TryLoadImagePart(MainDocumentPart main, string relId, double widthDip, double heightDip)
+    {
+        OpenXmlPart? part;
+        try
+        {
+            part = main.GetPartById(relId);
+        }
+        catch
+        {
+            return null;
+        }
+
+        if (part is not ImagePart imagePart)
+            return null;
+
+        byte[] bytes;
+        try
+        {
+            using var s = imagePart.GetStream(FileMode.Open, FileAccess.Read);
+            using var ms = new MemoryStream();
+            s.CopyTo(ms);
+            bytes = ms.ToArray();
+        }
+        catch
+        {
+            return null;
+        }
+
+        if (bytes.Length == 0)
+            return null;
+
+        string? fileName = null;
+        try
+        {
+            fileName = Path.GetFileName(imagePart.Uri?.OriginalString ?? "image");
+        }
+        catch
+        {
+            fileName = "image";
+        }
+
+        return new ImageBlock
+        {
+            ImageBytes = bytes,
+            ContentType = imagePart.ContentType ?? "image/png",
+            FileName = fileName,
+            DisplayWidth = widthDip,
+            DisplayHeight = heightDip,
         };
     }
 
@@ -364,6 +529,85 @@ public sealed class DocxDocumentService
             paragraph.AppendChild(new Run((RunProperties)rPr.CloneNode(true), new Text(string.Empty)));
 
         return paragraph;
+    }
+
+    private static Paragraph CreateImageParagraph(MainDocumentPart main, ImageBlock model, ref int imageIndex)
+    {
+        imageIndex++;
+        var partType = model.ContentType switch
+        {
+            "image/jpeg" or "image/jpg" => ImagePartType.Jpeg,
+            "image/gif" => ImagePartType.Gif,
+            "image/bmp" => ImagePartType.Bmp,
+            "image/tiff" => ImagePartType.Tiff,
+            "image/x-emf" => ImagePartType.Emf,
+            "image/x-wmf" => ImagePartType.Wmf,
+            _ => ImagePartType.Png,
+        };
+
+        var imagePart = main.AddImagePart(partType);
+        using (var ms = new MemoryStream(model.ImageBytes))
+            imagePart.FeedData(ms);
+
+        var relId = main.GetIdOfPart(imagePart);
+
+        // DIP (96) → EMU — never touch Avalonia Bitmap here (may run off UI thread).
+        var widthDip = model.DisplayWidth > 0 && !double.IsNaN(model.DisplayWidth)
+            ? model.DisplayWidth
+            : 400;
+        var heightDip = model.DisplayHeight;
+        if ((heightDip <= 0 || double.IsNaN(heightDip)) && model.PixelWidth > 0 && model.PixelHeight > 0)
+            heightDip = widthDip * model.PixelHeight / model.PixelWidth;
+        if (heightDip <= 0 || double.IsNaN(heightDip))
+            heightDip = widthDip * 0.75;
+        widthDip = Math.Clamp(widthDip, 40, 720);
+        heightDip = Math.Clamp(heightDip, 20, 2000);
+
+        var cx = (long)(widthDip / 96.0 * 914400);
+        var cy = (long)(heightDip / 96.0 * 914400);
+
+        var element =
+            new Drawing(
+                new DW.Inline(
+                    new DW.Extent { Cx = cx, Cy = cy },
+                    new DW.EffectExtent { LeftEdge = 0L, TopEdge = 0L, RightEdge = 0L, BottomEdge = 0L },
+                    new DW.DocProperties { Id = (uint)imageIndex, Name = model.FileName ?? $"Picture {imageIndex}" },
+                    new DW.NonVisualGraphicFrameDrawingProperties(
+                        new A.GraphicFrameLocks { NoChangeAspect = true }),
+                    new A.Graphic(
+                        new A.GraphicData(
+                            new PIC.Picture(
+                                new PIC.NonVisualPictureProperties(
+                                    new PIC.NonVisualDrawingProperties
+                                    {
+                                        Id = (uint)imageIndex,
+                                        Name = model.FileName ?? $"image{imageIndex}",
+                                    },
+                                    new PIC.NonVisualPictureDrawingProperties()),
+                                new PIC.BlipFill(
+                                    new A.Blip { Embed = relId },
+                                    new A.Stretch(new A.FillRectangle())),
+                                new PIC.ShapeProperties(
+                                    new A.Transform2D(
+                                        new A.Offset { X = 0L, Y = 0L },
+                                        new A.Extents { Cx = cx, Cy = cy }),
+                                    new A.PresetGeometry(new A.AdjustValueList())
+                                    {
+                                        Preset = A.ShapeTypeValues.Rectangle,
+                                    }))
+                        )
+                        {
+                            Uri = "http://schemas.openxmlformats.org/drawingml/2006/picture",
+                        })
+                )
+                {
+                    DistanceFromTop = 0U,
+                    DistanceFromBottom = 0U,
+                    DistanceFromLeft = 0U,
+                    DistanceFromRight = 0U,
+                });
+
+        return new Paragraph(new Run(element));
     }
 
     private static Table CreateTable(TableBlock model)
