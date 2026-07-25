@@ -986,13 +986,244 @@ public partial class MainViewModel : ViewModelBase
             return;
         PushUndo();
         var table = TableBlock.Create(3, 3);
+        HookTableCells(table);
         var index = SelectedBlock is null ? Document.Blocks.Count : Document.Blocks.IndexOf(SelectedBlock) + 1;
         if (index < 0 || index > Document.Blocks.Count)
             index = Document.Blocks.Count;
         Document.Blocks.Insert(index, table);
         SelectedBlock = table;
+        if (table.Rows.Count > 0 && table.Rows[0].Cells.Count > 0)
+            SelectedTableCell = table.Rows[0].Cells[0];
         MarkDirty();
-        StatusText = "已插入 3×3 表格";
+        StatusText = $"已插入表格 {table.RowCount}×{table.ColumnCount}";
+    }
+
+    /// <summary>在目前儲存格下方新增一列（無選取則加在表格末列下）。</summary>
+    [RelayCommand]
+    private void TableAddRowBelow()
+    {
+        if (!TryGetActiveTable(out var table, out var row, out _))
+            return;
+
+        try
+        {
+            PushUndo();
+            var newRow = table.InsertRow(row);
+            HookRowCells(newRow);
+            if (newRow.Cells.Count > 0)
+                SelectedTableCell = newRow.Cells[0];
+            SelectedBlock = table;
+            MarkDirty();
+            StatusText = $"已向下新增列（{table.RowCount}×{table.ColumnCount}）";
+        }
+        catch (Exception ex)
+        {
+            StatusText = ex.Message;
+        }
+    }
+
+    /// <summary>在目前儲存格上方插入一列。</summary>
+    [RelayCommand]
+    private void TableInsertRowAbove()
+    {
+        if (!TryGetActiveTable(out var table, out var row, out _))
+            return;
+
+        try
+        {
+            PushUndo();
+            var after = row - 1; // InsertRow(after) inserts after index; -1 = first
+            var newRow = table.InsertRow(after);
+            HookRowCells(newRow);
+            if (newRow.Cells.Count > 0)
+                SelectedTableCell = newRow.Cells[0];
+            SelectedBlock = table;
+            MarkDirty();
+            StatusText = $"已向上插入列（{table.RowCount}×{table.ColumnCount}）";
+        }
+        catch (Exception ex)
+        {
+            StatusText = ex.Message;
+        }
+    }
+
+    /// <summary>在目前儲存格右側新增一欄。</summary>
+    [RelayCommand]
+    private void TableAddColumnRight()
+    {
+        if (!TryGetActiveTable(out var table, out var row, out var col))
+            return;
+
+        try
+        {
+            PushUndo();
+            table.InsertColumn(col);
+            var newCol = Math.Min(col + 1, table.ColumnCount - 1);
+            foreach (var r in table.Rows)
+            {
+                if (newCol >= 0 && newCol < r.Cells.Count)
+                    HookCell(r.Cells[newCol]);
+            }
+
+            var rIdx = Math.Clamp(row, 0, table.Rows.Count - 1);
+            if (rIdx >= 0 && newCol >= 0 && newCol < table.Rows[rIdx].Cells.Count)
+                SelectedTableCell = table.Rows[rIdx].Cells[newCol];
+
+            SelectedBlock = table;
+            MarkDirty();
+            StatusText = $"已向右新增欄（{table.RowCount}×{table.ColumnCount}）";
+        }
+        catch (Exception ex)
+        {
+            StatusText = ex.Message;
+        }
+    }
+
+    /// <summary>在目前儲存格左側插入一欄。</summary>
+    [RelayCommand]
+    private void TableInsertColumnLeft()
+    {
+        if (!TryGetActiveTable(out var table, out var row, out var col))
+            return;
+
+        try
+        {
+            PushUndo();
+            table.InsertColumn(col - 1); // after col-1 → insert before current col
+            var newCol = Math.Clamp(col, 0, table.ColumnCount - 1);
+            foreach (var r in table.Rows)
+            {
+                if (newCol >= 0 && newCol < r.Cells.Count)
+                    HookCell(r.Cells[newCol]);
+            }
+
+            var rIdx = Math.Clamp(row, 0, table.Rows.Count - 1);
+            if (rIdx >= 0 && newCol >= 0 && newCol < table.Rows[rIdx].Cells.Count)
+                SelectedTableCell = table.Rows[rIdx].Cells[newCol];
+
+            SelectedBlock = table;
+            MarkDirty();
+            StatusText = $"已向左插入欄（{table.RowCount}×{table.ColumnCount}）";
+        }
+        catch (Exception ex)
+        {
+            StatusText = ex.Message;
+        }
+    }
+
+    [RelayCommand]
+    private void TableDeleteRow()
+    {
+        if (!TryGetActiveTable(out var table, out var row, out var col))
+            return;
+
+        try
+        {
+            PushUndo();
+            table.DeleteRowAt(row);
+            SelectedTableCell = null;
+            if (table.Rows.Count > 0)
+            {
+                var r = Math.Min(row, table.Rows.Count - 1);
+                var c = Math.Min(col, table.Rows[r].Cells.Count - 1);
+                if (c >= 0)
+                    SelectedTableCell = table.Rows[r].Cells[c];
+            }
+
+            SelectedBlock = table;
+            MarkDirty();
+            StatusText = $"已刪除列（{table.RowCount}×{table.ColumnCount}）";
+        }
+        catch (Exception ex)
+        {
+            StatusText = ex.Message;
+        }
+    }
+
+    [RelayCommand]
+    private void TableDeleteColumn()
+    {
+        if (!TryGetActiveTable(out var table, out var row, out var col))
+            return;
+
+        try
+        {
+            PushUndo();
+            table.DeleteColumnAt(col);
+            SelectedTableCell = null;
+            if (table.Rows.Count > 0 && table.ColumnCount > 0)
+            {
+                var r = Math.Min(row, table.Rows.Count - 1);
+                var c = Math.Min(col, table.Rows[r].Cells.Count - 1);
+                if (c >= 0)
+                    SelectedTableCell = table.Rows[r].Cells[c];
+            }
+
+            SelectedBlock = table;
+            MarkDirty();
+            StatusText = $"已刪除欄（{table.RowCount}×{table.ColumnCount}）";
+        }
+        catch (Exception ex)
+        {
+            StatusText = ex.Message;
+        }
+    }
+
+    private bool TryGetActiveTable(out TableBlock table, out int rowIndex, out int colIndex)
+    {
+        table = null!;
+        rowIndex = -1;
+        colIndex = -1;
+
+        if (Document is null)
+        {
+            StatusText = "請先開啟或建立文件。";
+            return false;
+        }
+
+        if (SelectedTableCell is not null)
+        {
+            foreach (var block in Document.Blocks.OfType<TableBlock>())
+            {
+                if (block.TryFindCell(SelectedTableCell, out rowIndex, out colIndex))
+                {
+                    table = block;
+                    SelectedBlock = block;
+                    return true;
+                }
+            }
+        }
+
+        if (SelectedBlock is TableBlock t && t.Rows.Count > 0)
+        {
+            table = t;
+            rowIndex = t.Rows.Count - 1;
+            colIndex = Math.Max(0, t.ColumnCount - 1);
+            if (t.Rows[rowIndex].Cells.Count > 0)
+                SelectedTableCell = t.Rows[rowIndex].Cells[Math.Min(colIndex, t.Rows[rowIndex].Cells.Count - 1)];
+            return true;
+        }
+
+        StatusText = "請先點選表格儲存格，再進行列／欄操作。";
+        return false;
+    }
+
+    private void HookTableCells(TableBlock table)
+    {
+        foreach (var row in table.Rows)
+            HookRowCells(row);
+    }
+
+    private void HookRowCells(TableRowBlock row)
+    {
+        foreach (var cell in row.Cells)
+            HookCell(cell);
+    }
+
+    private void HookCell(TableCellBlock cell)
+    {
+        cell.PropertyChanged -= OnBlockPropertyChanged;
+        cell.PropertyChanged += OnBlockPropertyChanged;
     }
 
     [RelayCommand]

@@ -194,6 +194,29 @@
 
                         <Border Width="1" Background="#D0D0D0" Margin="4,6" />
 
+                        <!-- 表格 -->
+                        <Border Classes="ribbon-group">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <Button Content="↓ 列" Command="{Binding TableAddRowBelowCommand}"
+                                            Classes="ribbon-btn" ToolTip.Tip="在目前儲存格下方新增一列" />
+                                    <Button Content="↑ 列" Command="{Binding TableInsertRowAboveCommand}"
+                                            Classes="ribbon-btn" ToolTip.Tip="在目前儲存格上方插入一列" />
+                                    <Button Content="→ 欄" Command="{Binding TableAddColumnRightCommand}"
+                                            Classes="ribbon-btn" ToolTip.Tip="在目前儲存格右側新增一欄" />
+                                    <Button Content="← 欄" Command="{Binding TableInsertColumnLeftCommand}"
+                                            Classes="ribbon-btn" ToolTip.Tip="在目前儲存格左側插入一欄" />
+                                    <Button Content="刪列" Command="{Binding TableDeleteRowCommand}"
+                                            Classes="ribbon-btn" ToolTip.Tip="刪除目前列" />
+                                    <Button Content="刪欄" Command="{Binding TableDeleteColumnCommand}"
+                                            Classes="ribbon-btn" ToolTip.Tip="刪除目前欄" />
+                                </StackPanel>
+                                <TextBlock Text="表格" Classes="ribbon-label" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Width="1" Background="#D0D0D0" Margin="4,6" />
+
                         <!-- 編輯 / 檢視 -->
                         <Border Classes="ribbon-group">
                             <StackPanel>

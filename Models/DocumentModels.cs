@@ -125,12 +125,20 @@ public partial class ParagraphBlock : DocumentBlock
 
 public partial class TableBlock : DocumentBlock
 {
+    public const int MaxRows = 100;
+    public const int MaxColumns = 20;
+
     public ObservableCollection<TableRowBlock> Rows { get; } = new();
+
+    public int ColumnCount =>
+        Rows.Count == 0 ? 0 : Rows.Max(r => r.Cells.Count);
+
+    public int RowCount => Rows.Count;
 
     public static TableBlock Create(int rows, int cols)
     {
-        rows = Math.Clamp(rows, 1, 20);
-        cols = Math.Clamp(cols, 1, 10);
+        rows = Math.Clamp(rows, 1, MaxRows);
+        cols = Math.Clamp(cols, 1, MaxColumns);
         var table = new TableBlock();
         for (var r = 0; r < rows; r++)
         {
@@ -141,6 +149,117 @@ public partial class TableBlock : DocumentBlock
         }
 
         return table;
+    }
+
+    /// <summary>Pad all rows so each has the same column count.</summary>
+    public void EnsureRectangular()
+    {
+        var cols = Math.Max(1, ColumnCount);
+        foreach (var row in Rows)
+        {
+            while (row.Cells.Count < cols)
+                row.Cells.Add(new TableCellBlock());
+        }
+    }
+
+    /// <summary>Insert a row after <paramref name="afterRowIndex"/> (-1 = before first; null = append).</summary>
+    public TableRowBlock InsertRow(int? afterRowIndex = null)
+    {
+        EnsureRectangular();
+        if (Rows.Count >= MaxRows)
+            throw new InvalidOperationException($"表格列數上限為 {MaxRows}。");
+
+        var cols = Math.Max(1, ColumnCount);
+        var row = new TableRowBlock();
+        for (var c = 0; c < cols; c++)
+            row.Cells.Add(new TableCellBlock());
+
+        if (afterRowIndex is null)
+            Rows.Add(row);
+        else if (afterRowIndex < 0)
+            Rows.Insert(0, row);
+        else if (afterRowIndex >= Rows.Count - 1)
+            Rows.Add(row);
+        else
+            Rows.Insert(afterRowIndex.Value + 1, row);
+
+        return row;
+    }
+
+    /// <summary>Insert a column after <paramref name="afterColIndex"/> (-1 = before first; null = append).</summary>
+    public void InsertColumn(int? afterColIndex = null)
+    {
+        EnsureRectangular();
+        var cols = ColumnCount;
+        if (cols >= MaxColumns)
+            throw new InvalidOperationException($"表格欄數上限為 {MaxColumns}。");
+
+        if (Rows.Count == 0)
+        {
+            var row = new TableRowBlock();
+            row.Cells.Add(new TableCellBlock());
+            Rows.Add(row);
+            return;
+        }
+
+        foreach (var row in Rows)
+        {
+            var cell = new TableCellBlock();
+            if (afterColIndex is null)
+                row.Cells.Add(cell);
+            else if (afterColIndex < 0)
+                row.Cells.Insert(0, cell);
+            else if (afterColIndex >= row.Cells.Count - 1)
+                row.Cells.Add(cell);
+            else
+                row.Cells.Insert(afterColIndex.Value + 1, cell);
+        }
+    }
+
+    public bool DeleteRowAt(int rowIndex)
+    {
+        if (rowIndex < 0 || rowIndex >= Rows.Count)
+            return false;
+        if (Rows.Count <= 1)
+            throw new InvalidOperationException("至少需保留一列。");
+        Rows.RemoveAt(rowIndex);
+        return true;
+    }
+
+    public bool DeleteColumnAt(int colIndex)
+    {
+        EnsureRectangular();
+        var cols = ColumnCount;
+        if (colIndex < 0 || colIndex >= cols)
+            return false;
+        if (cols <= 1)
+            throw new InvalidOperationException("至少需保留一欄。");
+
+        foreach (var row in Rows)
+        {
+            if (colIndex < row.Cells.Count)
+                row.Cells.RemoveAt(colIndex);
+        }
+
+        return true;
+    }
+
+    public bool TryFindCell(TableCellBlock cell, out int rowIndex, out int colIndex)
+    {
+        for (var r = 0; r < Rows.Count; r++)
+        {
+            var c = Rows[r].Cells.IndexOf(cell);
+            if (c >= 0)
+            {
+                rowIndex = r;
+                colIndex = c;
+                return true;
+            }
+        }
+
+        rowIndex = -1;
+        colIndex = -1;
+        return false;
     }
 }
 
