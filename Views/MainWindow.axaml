@@ -380,10 +380,8 @@
                                                 <Border.ContextMenu>
                                                     <ContextMenu Opening="OnTableContextMenuOpening">
                                                         <MenuItem Header="向下拓展（新增列）"
-                                                                  InputGesture="↓"
                                                                   Click="OnTableMenuAddRowBelow" />
                                                         <MenuItem Header="向右拓展（新增欄）"
-                                                                  InputGesture="→"
                                                                   Click="OnTableMenuAddColumnRight" />
                                                         <Separator />
                                                         <MenuItem Header="向上插入列" Click="OnTableMenuInsertRowAbove" />
