@@ -69,6 +69,8 @@ public partial class MainWindow : Window
         if (DataContext is not MainViewModel vm || sender is not Control control)
             return;
 
+        // Focusing a paragraph clears cell selection.
+        vm.SelectedTableCell = null;
         var block = FindBlockDataContext(control);
         if (block is not null)
             vm.SelectedBlock = block;
@@ -82,6 +84,38 @@ public partial class MainWindow : Window
         var block = FindBlockDataContext(control);
         if (block is not null)
             vm.SelectedBlock = block;
+    }
+
+    private void OnTableCellGotFocus(object? sender, GotFocusEventArgs e)
+    {
+        SelectCellFromControl(sender as Control);
+    }
+
+    private void OnTableCellPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        SelectCellFromControl(sender as Control);
+    }
+
+    private void SelectCellFromControl(Control? control)
+    {
+        if (DataContext is not MainViewModel vm || control is null)
+            return;
+
+        TableCellBlock? cell = null;
+        TableBlock? table = null;
+        for (var c = control as Control; c is not null; c = c.GetVisualParent() as Control)
+        {
+            if (cell is null && c.DataContext is TableCellBlock cellBlock)
+                cell = cellBlock;
+            if (c.DataContext is TableBlock tableBlock)
+            {
+                table = tableBlock;
+                break;
+            }
+        }
+
+        if (cell is not null)
+            vm.SelectTableCell(cell, table);
     }
 
     private static DocumentBlock? FindBlockDataContext(Control control)

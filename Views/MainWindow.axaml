@@ -121,9 +121,9 @@
                                             Classes="ribbon-btn" Width="36" ToolTip.Tip="放大字級" />
                                     <ComboBox Width="72"
                                               ItemsSource="{Binding FontSizeOptions}"
-                                              SelectedItem="{Binding SelectedParagraph.FontSize, Mode=TwoWay}"
-                                              IsEnabled="{Binding SelectedParagraph, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                              VerticalAlignment="Center" />
+                                              SelectedItem="{Binding ActiveFontSize, Mode=TwoWay}"
+                                              VerticalAlignment="Center"
+                                              ToolTip.Tip="字級（段落或表格儲存格）" />
                                 </StackPanel>
                                 <TextBlock Text="字型" Classes="ribbon-label" />
                             </StackPanel>
@@ -337,13 +337,19 @@
                                                                                 BorderThickness="0.5"
                                                                                 Padding="6,4"
                                                                                 MinHeight="32"
-                                                                                Background="White">
+                                                                                Background="White"
+                                                                                PointerPressed="OnTableCellPointerPressed">
                                                                             <TextBox Text="{Binding Text, Mode=TwoWay}"
+                                                                                     FontSize="{Binding FontSize}"
+                                                                                     FontWeight="{Binding IsBold, Converter={x:Static conv:EditorConverters.FontWeightFromBool}}"
+                                                                                     FontStyle="{Binding IsItalic, Converter={x:Static conv:EditorConverters.FontStyleFromBool}}"
+                                                                                     TextAlignment="{Binding Alignment, Converter={x:Static conv:EditorConverters.AlignmentFromKind}}"
                                                                                      BorderThickness="0"
                                                                                      Background="Transparent"
                                                                                      TextWrapping="Wrap"
                                                                                      AcceptsReturn="True"
-                                                                                     MinHeight="24" />
+                                                                                     MinHeight="24"
+                                                                                     GotFocus="OnTableCellGotFocus" />
                                                                         </Border>
                                                                     </DataTemplate>
                                                                 </ItemsControl.ItemTemplate>

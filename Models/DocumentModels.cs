@@ -153,6 +153,21 @@ public partial class TableCellBlock : ObservableObject
 {
     [ObservableProperty]
     private string _text = string.Empty;
+
+    [ObservableProperty]
+    private double _fontSize = 14;
+
+    [ObservableProperty]
+    private bool _isBold;
+
+    [ObservableProperty]
+    private bool _isItalic;
+
+    [ObservableProperty]
+    private bool _isUnderline;
+
+    [ObservableProperty]
+    private ParagraphAlignmentKind _alignment = ParagraphAlignmentKind.Left;
 }
 
 /// <summary>Embedded image block loaded from or saved to .docx.</summary>

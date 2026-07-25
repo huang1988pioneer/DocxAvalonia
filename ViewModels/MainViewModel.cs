@@ -23,6 +23,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly Stack<string> _redoStack = new();
     private readonly DispatcherTimer _autoSaveTimer;
     private bool _suspendDirty;
+    private bool _suspendFontSync;
 
     [ObservableProperty]
     private string _windowTitle = "DocxAvalonia";
@@ -60,6 +61,13 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private ParagraphBlock? _selectedParagraph;
+
+    [ObservableProperty]
+    private TableCellBlock? _selectedTableCell;
+
+    /// <summary>Font size of the current formatting target (paragraph or table cell).</summary>
+    [ObservableProperty]
+    private double _activeFontSize = 14;
 
     [ObservableProperty]
     private double _zoom = 1.0;
@@ -140,6 +148,64 @@ public partial class MainViewModel : ViewModelBase
     partial void OnSelectedBlockChanged(DocumentBlock? value)
     {
         SelectedParagraph = value as ParagraphBlock;
+        if (value is not TableBlock)
+            SelectedTableCell = null;
+        SyncActiveFontSize();
+    }
+
+    partial void OnSelectedParagraphChanged(ParagraphBlock? value) => SyncActiveFontSize();
+
+    partial void OnSelectedTableCellChanged(TableCellBlock? value) => SyncActiveFontSize();
+
+    partial void OnActiveFontSizeChanged(double value)
+    {
+        // ComboBox two-way: apply when user picks a size.
+        if (_suspendFontSync || value <= 0)
+            return;
+        if (SelectedTableCell is not null)
+        {
+            if (Math.Abs(SelectedTableCell.FontSize - value) > 0.01)
+            {
+                PushUndo();
+                SelectedTableCell.FontSize = value;
+                MarkDirty();
+            }
+        }
+        else if (SelectedParagraph is not null)
+        {
+            if (Math.Abs(SelectedParagraph.FontSize - value) > 0.01)
+            {
+                PushUndo();
+                SelectedParagraph.FontSize = value;
+                MarkDirty();
+            }
+        }
+    }
+
+    private void SyncActiveFontSize()
+    {
+        _suspendFontSync = true;
+        try
+        {
+            if (SelectedTableCell is not null)
+                ActiveFontSize = SelectedTableCell.FontSize > 0 ? SelectedTableCell.FontSize : 14;
+            else if (SelectedParagraph is not null)
+                ActiveFontSize = SelectedParagraph.FontSize > 0 ? SelectedParagraph.FontSize : 14;
+        }
+        finally
+        {
+            _suspendFontSync = false;
+        }
+    }
+
+    /// <summary>Select a table cell for formatting (called from the view on focus).</summary>
+    public void SelectTableCell(TableCellBlock cell, TableBlock? owningTable = null)
+    {
+        if (owningTable is not null)
+            SelectedBlock = owningTable;
+        SelectedParagraph = null;
+        SelectedTableCell = cell;
+        SyncActiveFontSize();
     }
 
     partial void OnDocumentChanged(WordDocument? value)
@@ -225,7 +291,15 @@ public partial class MainViewModel : ViewModelBase
                 TableBlock t => new BlockDto
                 {
                     Type = "t",
-                    Rows = t.Rows.Select(r => r.Cells.Select(c => c.Text).ToList()).ToList(),
+                    TableCells = t.Rows.Select(r => r.Cells.Select(c => new CellDto
+                    {
+                        Text = c.Text,
+                        FontSize = c.FontSize,
+                        Bold = c.IsBold,
+                        Italic = c.IsItalic,
+                        Underline = c.IsUnderline,
+                        Align = c.Alignment.ToString(),
+                    }).ToList()).ToList(),
                 },
                 ImageBlock img => new BlockDto
                 {
@@ -249,14 +323,41 @@ public partial class MainViewModel : ViewModelBase
         var doc = new WordDocument { Title = dto.Title ?? "文件" };
         foreach (var b in dto.Blocks ?? [])
         {
-            if (b.Type == "t" && b.Rows is not null)
+            if (b.Type == "t" && b.TableCells is not null)
             {
+                var table = new TableBlock();
+                foreach (var row in b.TableCells)
+                {
+                    var tr = new TableRowBlock();
+                    foreach (var cell in row)
+                    {
+                        tr.Cells.Add(new TableCellBlock
+                        {
+                            Text = cell.Text ?? string.Empty,
+                            FontSize = cell.FontSize > 0 ? cell.FontSize : 14,
+                            IsBold = cell.Bold,
+                            IsItalic = cell.Italic,
+                            IsUnderline = cell.Underline,
+                            Alignment = Enum.TryParse<ParagraphAlignmentKind>(cell.Align, out var ca)
+                                ? ca
+                                : ParagraphAlignmentKind.Left,
+                        });
+                    }
+
+                    table.Rows.Add(tr);
+                }
+
+                doc.Blocks.Add(table);
+            }
+            else if (b.Type == "t" && b.Rows is not null)
+            {
+                // Backward-compatible plain text rows
                 var table = new TableBlock();
                 foreach (var row in b.Rows)
                 {
                     var tr = new TableRowBlock();
                     foreach (var cell in row)
-                        tr.Cells.Add(new TableCellBlock { Text = cell });
+                        tr.Cells.Add(new TableCellBlock { Text = cell, FontSize = 14 });
                     table.Rows.Add(tr);
                 }
 
@@ -619,6 +720,14 @@ public partial class MainViewModel : ViewModelBase
     private async Task CutAsync()
     {
         await CopyAsync();
+        if (SelectedTableCell is not null)
+        {
+            PushUndo();
+            SelectedTableCell.Text = string.Empty;
+            MarkDirty();
+            return;
+        }
+
         if (SelectedParagraph is not null)
         {
             PushUndo();
@@ -630,7 +739,10 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private async Task CopyAsync()
     {
-        var text = SelectedParagraph?.Text ?? Document?.GetPlainText() ?? string.Empty;
+        var text = SelectedTableCell?.Text
+                   ?? SelectedParagraph?.Text
+                   ?? Document?.GetPlainText()
+                   ?? string.Empty;
         var clipboard = GetClipboard();
         if (clipboard is null)
             return;
@@ -642,10 +754,22 @@ public partial class MainViewModel : ViewModelBase
     private async Task PasteAsync()
     {
         var clipboard = GetClipboard();
-        if (clipboard is null || SelectedParagraph is null)
+        if (clipboard is null)
             return;
         var text = await clipboard.GetTextAsync();
         if (string.IsNullOrEmpty(text))
+            return;
+
+        if (SelectedTableCell is not null)
+        {
+            PushUndo();
+            SelectedTableCell.Text = (SelectedTableCell.Text ?? string.Empty) + text;
+            MarkDirty();
+            StatusText = "已貼上（儲存格）";
+            return;
+        }
+
+        if (SelectedParagraph is null)
             return;
         PushUndo();
         SelectedParagraph.Text = (SelectedParagraph.Text ?? string.Empty) + text;
@@ -666,6 +790,14 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void ToggleBold()
     {
+        if (SelectedTableCell is not null)
+        {
+            PushUndo();
+            SelectedTableCell.IsBold = !SelectedTableCell.IsBold;
+            MarkDirty();
+            return;
+        }
+
         if (SelectedParagraph is null)
             return;
         PushUndo();
@@ -676,6 +808,14 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void ToggleItalic()
     {
+        if (SelectedTableCell is not null)
+        {
+            PushUndo();
+            SelectedTableCell.IsItalic = !SelectedTableCell.IsItalic;
+            MarkDirty();
+            return;
+        }
+
         if (SelectedParagraph is null)
             return;
         PushUndo();
@@ -686,6 +826,14 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void ToggleUnderline()
     {
+        if (SelectedTableCell is not null)
+        {
+            PushUndo();
+            SelectedTableCell.IsUnderline = !SelectedTableCell.IsUnderline;
+            MarkDirty();
+            return;
+        }
+
         if (SelectedParagraph is null)
             return;
         PushUndo();
@@ -696,39 +844,81 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void IncreaseFontSize()
     {
+        if (SelectedTableCell is not null)
+        {
+            PushUndo();
+            SelectedTableCell.FontSize = Math.Min(72, Math.Max(8, SelectedTableCell.FontSize) + 2);
+            ActiveFontSize = SelectedTableCell.FontSize;
+            MarkDirty();
+            return;
+        }
+
         if (SelectedParagraph is null)
             return;
         PushUndo();
         SelectedParagraph.FontSize = Math.Min(72, SelectedParagraph.FontSize + 2);
+        ActiveFontSize = SelectedParagraph.FontSize;
         MarkDirty();
     }
 
     [RelayCommand]
     private void DecreaseFontSize()
     {
+        if (SelectedTableCell is not null)
+        {
+            PushUndo();
+            SelectedTableCell.FontSize = Math.Max(8, (SelectedTableCell.FontSize > 0 ? SelectedTableCell.FontSize : 14) - 2);
+            ActiveFontSize = SelectedTableCell.FontSize;
+            MarkDirty();
+            return;
+        }
+
         if (SelectedParagraph is null)
             return;
         PushUndo();
         SelectedParagraph.FontSize = Math.Max(8, SelectedParagraph.FontSize - 2);
+        ActiveFontSize = SelectedParagraph.FontSize;
         MarkDirty();
     }
 
     [RelayCommand]
     private void SetFontSize(double size)
     {
+        if (size <= 0)
+            return;
+
+        if (SelectedTableCell is not null)
+        {
+            PushUndo();
+            SelectedTableCell.FontSize = size;
+            ActiveFontSize = size;
+            MarkDirty();
+            return;
+        }
+
         if (SelectedParagraph is null)
             return;
         PushUndo();
         SelectedParagraph.FontSize = size;
+        ActiveFontSize = size;
         MarkDirty();
     }
 
     [RelayCommand]
     private void SetAlignment(string align)
     {
-        if (SelectedParagraph is null)
-            return;
         if (!Enum.TryParse<ParagraphAlignmentKind>(align, true, out var kind))
+            return;
+
+        if (SelectedTableCell is not null)
+        {
+            PushUndo();
+            SelectedTableCell.Alignment = kind;
+            MarkDirty();
+            return;
+        }
+
+        if (SelectedParagraph is null)
             return;
         PushUndo();
         SelectedParagraph.Alignment = kind;
@@ -1062,9 +1252,20 @@ public partial class MainViewModel : ViewModelBase
         public double FontSize { get; set; }
         public string? List { get; set; }
         public List<List<string>>? Rows { get; set; }
+        public List<List<CellDto>>? TableCells { get; set; }
         public string? ContentType { get; set; }
         public string? ImageBase64 { get; set; }
         public double DisplayWidth { get; set; }
         public double DisplayHeight { get; set; }
+    }
+
+    private sealed class CellDto
+    {
+        public string? Text { get; set; }
+        public double FontSize { get; set; }
+        public bool Bold { get; set; }
+        public bool Italic { get; set; }
+        public bool Underline { get; set; }
+        public string? Align { get; set; }
     }
 }

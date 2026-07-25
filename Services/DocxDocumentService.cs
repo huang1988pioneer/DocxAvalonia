@@ -389,10 +389,7 @@ public sealed class DocxDocumentService
             var rowBlock = new TableRowBlock();
             foreach (var cell in row.Elements<TableCell>())
             {
-                var text = string.Join('\n',
-                    cell.Elements<Paragraph>().Select(p =>
-                        string.Concat(p.Descendants<Text>().Select(t => t.Text))));
-                rowBlock.Cells.Add(new TableCellBlock { Text = text });
+                rowBlock.Cells.Add(ConvertTableCell(cell));
             }
 
             if (rowBlock.Cells.Count > 0)
@@ -403,6 +400,59 @@ public sealed class DocxDocumentService
             return TableBlock.Create(2, 2);
 
         return result;
+    }
+
+    private static TableCellBlock ConvertTableCell(TableCell cell)
+    {
+        var paragraphs = cell.Elements<Paragraph>().ToList();
+        var text = string.Join('\n',
+            paragraphs.Select(p => string.Concat(p.Descendants<Text>().Select(t => t.Text))));
+
+        // Sample formatting from first non-empty run in the cell.
+        double fontSize = 14;
+        var bold = false;
+        var italic = false;
+        var underline = false;
+        var alignment = ParagraphAlignmentKind.Left;
+
+        var firstPara = paragraphs.FirstOrDefault();
+        if (firstPara is not null)
+        {
+            var align = firstPara.ParagraphProperties?.Justification?.Val?.Value;
+            if (align == JustificationValues.Center)
+                alignment = ParagraphAlignmentKind.Center;
+            else if (align == JustificationValues.Right)
+                alignment = ParagraphAlignmentKind.Right;
+            else if (align == JustificationValues.Both)
+                alignment = ParagraphAlignmentKind.Justify;
+
+            var runs = firstPara.Descendants<Run>().Where(r => r.Elements<Text>().Any()).ToList();
+            if (runs.Count > 0)
+            {
+                var props = runs[0].RunProperties;
+                if (props?.Bold is not null && (props.Bold.Val is null || props.Bold.Val.Value))
+                    bold = true;
+                if (props?.Italic is not null && (props.Italic.Val is null || props.Italic.Val.Value))
+                    italic = true;
+                if (props?.Underline is not null
+                    && props.Underline.Val is not null
+                    && props.Underline.Val.Value != UnderlineValues.None)
+                    underline = true;
+                var half = props?.FontSize?.Val?.Value;
+                if (half is not null && double.TryParse(half, out var hp) && hp > 0)
+                    fontSize = hp / 2.0;
+            }
+        }
+
+        return new TableCellBlock
+        {
+            Text = text,
+            FontSize = fontSize,
+            IsBold = bold,
+            IsItalic = italic,
+            IsUnderline = underline,
+            Alignment = alignment,
+        };
     }
 
     private static void EnsureStyles(MainDocumentPart main)
@@ -631,19 +681,61 @@ public sealed class DocxDocumentService
             var tr = new TableRow();
             foreach (var cell in row.Cells)
             {
-                var tc = new TableCell(
-                    new TableCellProperties(new TableCellWidth { Type = TableWidthUnitValues.Auto }),
-                    new Paragraph(new Run(new Text(cell.Text ?? string.Empty)
-                    {
-                        Space = SpaceProcessingModeValues.Preserve,
-                    }))
-                );
-                tr.AppendChild(tc);
+                tr.AppendChild(CreateTableCell(cell));
             }
 
             table.AppendChild(tr);
         }
 
         return table;
+    }
+
+    private static TableCell CreateTableCell(TableCellBlock cell)
+    {
+        var pPr = new ParagraphProperties(
+            new Justification
+            {
+                Val = cell.Alignment switch
+                {
+                    ParagraphAlignmentKind.Center => JustificationValues.Center,
+                    ParagraphAlignmentKind.Right => JustificationValues.Right,
+                    ParagraphAlignmentKind.Justify => JustificationValues.Both,
+                    _ => JustificationValues.Left,
+                },
+            });
+
+        var rPr = new RunProperties();
+        if (cell.IsBold)
+            rPr.AppendChild(new Bold());
+        if (cell.IsItalic)
+            rPr.AppendChild(new Italic());
+        if (cell.IsUnderline)
+            rPr.AppendChild(new Underline { Val = UnderlineValues.Single });
+        var size = cell.FontSize > 0 ? cell.FontSize : 14;
+        rPr.AppendChild(new FontSize { Val = ((int)Math.Round(size * 2)).ToString() });
+        rPr.AppendChild(new RunFonts
+        {
+            Ascii = "Microsoft JhengHei",
+            EastAsia = "Microsoft JhengHei",
+            HighAnsi = "Calibri",
+        });
+
+        var paragraph = new Paragraph(pPr);
+        var lines = (cell.Text ?? string.Empty).Replace("\r\n", "\n").Split('\n');
+        for (var i = 0; i < lines.Length; i++)
+        {
+            if (i > 0)
+                paragraph.AppendChild(new Run(new Break()));
+            paragraph.AppendChild(new Run(
+                (RunProperties)rPr.CloneNode(true),
+                new Text(lines[i]) { Space = SpaceProcessingModeValues.Preserve }));
+        }
+
+        if (lines.Length == 0)
+            paragraph.AppendChild(new Run((RunProperties)rPr.CloneNode(true), new Text(string.Empty)));
+
+        return new TableCell(
+            new TableCellProperties(new TableCellWidth { Type = TableWidthUnitValues.Auto }),
+            paragraph);
     }
 }
