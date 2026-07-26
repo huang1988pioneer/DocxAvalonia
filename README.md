@@ -1,6 +1,6 @@
 ﻿# DocxAvalonia
 
-以 **Avalonia UI** 打造的 Word 風格 `.docx` 編輯／預覽桌面程式。
+以 **Avalonia UI** 打造的 `.docx` 編輯／預覽桌面程式，可切換 **六種介面風格**：Microsoft Word、LibreOffice Writer、Google 文件、Zoho Writer、WPS Writer、FreeOffice TextMaker。
 
 ## 下載
 
@@ -40,7 +40,25 @@ dotnet run -c Release
 - 復原 / 重做
 - 尋找、取代、全部取代
 
+### 介面風格（可切換）
+頂部 **介面風格** 下拉可即時切換六種 chrome（功能相同，外觀不同）：
+
+| 風格 | 特色 |
+|------|------|
+| **Microsoft Word** | 深藍標題列 `#2B579A`、快速存取按鈕 |
+| **LibreOffice Writer** | 綠標 `#18A303`、灰工具列、右側屬性 |
+| **Google 文件** | 白底、藍強調 `#1A73E8`、簡潔標題與儲存狀態 |
+| **Zoho Writer** | 青藍 `#00A3E0`、雙側面板、狀態膠囊 |
+| **WPS Writer** | 紅標 `#E81123`、現代白底工具列 |
+| **FreeOffice TextMaker** | 暖灰／橘 `#E36C0A`、經典工具列質感 |
+
+共通：
+- **分頁功能列**：首頁 / 插入 / 格式 / 工具 / 校閱 / 檢視
+- **左側文件導覽**、**右側屬性面板**（可開關；各風格預設不同）
+- 灰畫布 + 置中白頁；狀態列：狀態 / 選取 / 字數 / 縮放
+
 ### 字型與段落
+- 字型下拉（微軟正黑體、Calibri、Arial…）
 - 粗體、斜體、底線（Ctrl+B / I / U）
 - 字級放大縮小、字級下拉
 - 左 / 中 / 右 / 兩端對齊
@@ -76,4 +94,4 @@ dotnet run -c Release
 | 文件 | DocumentFormat.OpenXml 讀寫 `.docx` |
 | 編輯模型 | 段落／表格／圖片區塊（段落級格式） |
 
-> 此為精簡 Word 工作站，非完整 Microsoft Word 引擎；複雜版面、文字方塊、追蹤修訂等未完整支援。
+> 此為精簡本機編輯器，外觀可仿 Word／LibreOffice／Google 文件／Zoho／WPS／FreeOffice，**非**完整商業引擎；無雲端協作、留言、追蹤修訂等。

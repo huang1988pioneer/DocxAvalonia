@@ -105,6 +105,10 @@ public partial class ParagraphBlock : DocumentBlock
     [ObservableProperty]
     private double _fontSize = 14;
 
+    /// <summary>UI / OpenXML font family name (e.g. Microsoft JhengHei, Calibri).</summary>
+    [ObservableProperty]
+    private string _fontFamily = "Microsoft JhengHei";
+
     [ObservableProperty]
     private ListKind _listKind = ListKind.None;
 
@@ -275,6 +279,9 @@ public partial class TableCellBlock : ObservableObject
 
     [ObservableProperty]
     private double _fontSize = 14;
+
+    [ObservableProperty]
+    private string _fontFamily = "Microsoft JhengHei";
 
     [ObservableProperty]
     private bool _isBold;

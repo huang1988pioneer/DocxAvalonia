@@ -44,4 +44,37 @@ public static class EditorConverters
             ParagraphStyleKind.Heading3 => "標題 3",
             _ => "內文",
         });
+
+    public static readonly IValueConverter FontFamilyFromName =
+        new FuncValueConverter<string?, FontFamily>(name =>
+            string.IsNullOrWhiteSpace(name)
+                ? new FontFamily("Microsoft JhengHei, Microsoft YaHei, Segoe UI, sans-serif")
+                : new FontFamily(name));
+
+    /// <summary>True when bound string equals ConverterParameter (ribbon tab, UI theme, etc.).</summary>
+    public static readonly IValueConverter IsRibbonTab = new StringEqualsConverter();
+
+    /// <summary>Alias for theme / layout string equality checks.</summary>
+    public static readonly IValueConverter IsUiTheme = IsRibbonTab;
+
+    public static readonly IValueConverter UiThemeLabel =
+        new FuncValueConverter<string?, string>(id => id switch
+        {
+            "Word" => "Microsoft Word",
+            "LibreOffice" => "LibreOffice Writer",
+            "GoogleDocs" => "Google 文件",
+            "Zoho" => "Zoho Writer",
+            "Wps" => "WPS Writer",
+            "FreeOffice" => "FreeOffice TextMaker",
+            _ => id ?? string.Empty,
+        });
+
+    private sealed class StringEqualsConverter : IValueConverter
+    {
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+            => string.Equals(value?.ToString(), parameter?.ToString(), StringComparison.OrdinalIgnoreCase);
+
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+            => throw new NotSupportedException();
+    }
 }

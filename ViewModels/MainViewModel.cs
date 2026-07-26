@@ -29,7 +29,7 @@ public partial class MainViewModel : ViewModelBase
     private string _windowTitle = "DocxAvalonia";
 
     [ObservableProperty]
-    private string _statusText = "就緒 — 新增或開啟文件開始編輯";
+    private string _statusText = "就緒 — Zoho Writer 風格編輯器";
 
     [ObservableProperty]
     private string? _filePath;
@@ -75,6 +75,47 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private double _activeFontSize = 14;
 
+    /// <summary>Font family of the current formatting target.</summary>
+    [ObservableProperty]
+    private string _activeFontFamily = "Microsoft JhengHei";
+
+    /// <summary>Ribbon tab: Home | Insert | Format | Tools | Review | View.</summary>
+    [ObservableProperty]
+    private string _ribbonTab = "Home";
+
+    /// <summary>
+    /// Chrome theme id: Word | LibreOffice | GoogleDocs | Zoho | Wps | FreeOffice.
+    /// </summary>
+    [ObservableProperty]
+    private string _uiTheme = "Zoho";
+
+    /// <summary>Right properties / style panel.</summary>
+    [ObservableProperty]
+    private bool _showSidebar = true;
+
+    /// <summary>Left document navigator / map.</summary>
+    [ObservableProperty]
+    private bool _showNavigator = true;
+
+    [ObservableProperty]
+    private string _selectionInfoText = "未選取";
+
+    /// <summary>Save status line under the document title.</summary>
+    [ObservableProperty]
+    private string _saveStatusDisplay = "未儲存到磁碟";
+
+    /// <summary>Document title shown in the header.</summary>
+    [ObservableProperty]
+    private string _documentTitleDisplay = "未命名文件";
+
+    /// <summary>Brand label in the header (changes with UiTheme).</summary>
+    [ObservableProperty]
+    private string _themeBrandText = "Writer";
+
+    /// <summary>Accent-friendly short theme description for status.</summary>
+    [ObservableProperty]
+    private string _themeStatusHint = "Zoho Writer 風格";
+
     [ObservableProperty]
     private double _zoom = 1.0;
 
@@ -99,6 +140,33 @@ public partial class MainViewModel : ViewModelBase
     public ObservableCollection<double> FontSizeOptions { get; } =
         [10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 32, 36, 48];
 
+    public ObservableCollection<string> FontFamilyOptions { get; } =
+    [
+        "Microsoft JhengHei",
+        "Microsoft YaHei",
+        "Segoe UI",
+        "Calibri",
+        "Arial",
+        "Times New Roman",
+        "Courier New",
+        "Georgia",
+        "Verdana",
+        "Tahoma",
+        "Consolas",
+        "Noto Sans CJK TC",
+    ];
+
+    /// <summary>UI chrome themes requested by the user (all six).</summary>
+    public ObservableCollection<string> UiThemeOptions { get; } =
+    [
+        "Word",
+        "LibreOffice",
+        "GoogleDocs",
+        "Zoho",
+        "Wps",
+        "FreeOffice",
+    ];
+
     public MainViewModel()
     {
         _autoSaveTimer = new DispatcherTimer
@@ -107,7 +175,68 @@ public partial class MainViewModel : ViewModelBase
         };
         _autoSaveTimer.Tick += OnAutoSaveTick;
 
+        ApplyUiThemeDefaults(UiTheme, updateStatus: false);
         NewDocument();
+    }
+
+    partial void OnUiThemeChanged(string value) => ApplyUiThemeDefaults(value, updateStatus: true);
+
+    private void ApplyUiThemeDefaults(string theme, bool updateStatus)
+    {
+        switch (theme)
+        {
+            case "Word":
+                ThemeBrandText = "Word";
+                ThemeStatusHint = "Microsoft Word 風格";
+                ShowNavigator = false;
+                ShowSidebar = false;
+                break;
+            case "LibreOffice":
+                ThemeBrandText = "Writer";
+                ThemeStatusHint = "LibreOffice Writer 風格";
+                ShowNavigator = false;
+                ShowSidebar = true;
+                break;
+            case "GoogleDocs":
+                ThemeBrandText = "文件";
+                ThemeStatusHint = "Google 文件風格";
+                ShowNavigator = false;
+                ShowSidebar = false;
+                break;
+            case "Wps":
+                ThemeBrandText = "WPS";
+                ThemeStatusHint = "WPS Writer 風格";
+                ShowNavigator = false;
+                ShowSidebar = true;
+                break;
+            case "FreeOffice":
+                ThemeBrandText = "TextMaker";
+                ThemeStatusHint = "FreeOffice TextMaker 風格";
+                ShowNavigator = false;
+                ShowSidebar = true;
+                break;
+            default: // Zoho
+                ThemeBrandText = "Writer";
+                ThemeStatusHint = "Zoho Writer 風格";
+                ShowNavigator = true;
+                ShowSidebar = true;
+                break;
+        }
+
+        if (updateStatus)
+            StatusText = $"已切換介面：{ThemeStatusHint}";
+        else
+            StatusText = $"就緒 — {ThemeStatusHint}";
+    }
+
+    [RelayCommand]
+    private void SetUiTheme(string? theme)
+    {
+        if (string.IsNullOrWhiteSpace(theme))
+            return;
+        if (!UiThemeOptions.Contains(theme))
+            return;
+        UiTheme = theme;
     }
 
     partial void OnZoomChanged(double value)
@@ -129,6 +258,8 @@ public partial class MainViewModel : ViewModelBase
             AutoSaveStatusText = "自動儲存：關";
             StatusText = "已關閉自動儲存";
         }
+
+        UpdateSaveStatusDisplay();
     }
 
     private async void OnAutoSaveTick(object? sender, EventArgs e)
@@ -157,11 +288,10 @@ public partial class MainViewModel : ViewModelBase
         SelectedImage = value as ImageBlock;
         if (value is not TableBlock)
             SelectedTableCell = null;
-        SyncActiveFontSize();
+        SyncActiveFormatting();
         UpdateImageSizeText();
+        UpdateSelectionInfo();
     }
-
-    partial void OnSelectedImageChanged(ImageBlock? value) => UpdateImageSizeText();
 
     private void UpdateImageSizeText()
     {
@@ -170,9 +300,44 @@ public partial class MainViewModel : ViewModelBase
             : $"圖片 {SelectedImage.SizeLabel}";
     }
 
-    partial void OnSelectedParagraphChanged(ParagraphBlock? value) => SyncActiveFontSize();
+    partial void OnSelectedParagraphChanged(ParagraphBlock? value)
+    {
+        SyncActiveFormatting();
+        UpdateSelectionInfo();
+    }
 
-    partial void OnSelectedTableCellChanged(TableCellBlock? value) => SyncActiveFontSize();
+    partial void OnSelectedTableCellChanged(TableCellBlock? value)
+    {
+        SyncActiveFormatting();
+        UpdateSelectionInfo();
+    }
+
+    partial void OnSelectedImageChanged(ImageBlock? value)
+    {
+        UpdateImageSizeText();
+        UpdateSelectionInfo();
+    }
+
+    private void UpdateSelectionInfo()
+    {
+        if (SelectedTableCell is not null)
+            SelectionInfoText = "表格儲存格";
+        else if (SelectedImage is not null)
+            SelectionInfoText = $"圖片 · {SelectedImage.SizeLabel}";
+        else if (SelectedParagraph is not null)
+        {
+            var style = SelectedParagraph.Style switch
+            {
+                ParagraphStyleKind.Heading1 => "標題 1",
+                ParagraphStyleKind.Heading2 => "標題 2",
+                ParagraphStyleKind.Heading3 => "標題 3",
+                _ => "內文",
+            };
+            SelectionInfoText = $"段落 · {style}";
+        }
+        else
+            SelectionInfoText = "未選取";
+    }
 
     partial void OnActiveFontSizeChanged(double value)
     {
@@ -199,15 +364,50 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    private void SyncActiveFontSize()
+    partial void OnActiveFontFamilyChanged(string value)
+    {
+        if (_suspendFontSync || string.IsNullOrWhiteSpace(value))
+            return;
+
+        if (SelectedTableCell is not null)
+        {
+            if (!string.Equals(SelectedTableCell.FontFamily, value, StringComparison.Ordinal))
+            {
+                PushUndo();
+                SelectedTableCell.FontFamily = value;
+                MarkDirty();
+            }
+        }
+        else if (SelectedParagraph is not null)
+        {
+            if (!string.Equals(SelectedParagraph.FontFamily, value, StringComparison.Ordinal))
+            {
+                PushUndo();
+                SelectedParagraph.FontFamily = value;
+                MarkDirty();
+            }
+        }
+    }
+
+    private void SyncActiveFormatting()
     {
         _suspendFontSync = true;
         try
         {
             if (SelectedTableCell is not null)
+            {
                 ActiveFontSize = SelectedTableCell.FontSize > 0 ? SelectedTableCell.FontSize : 14;
+                ActiveFontFamily = string.IsNullOrWhiteSpace(SelectedTableCell.FontFamily)
+                    ? "Microsoft JhengHei"
+                    : SelectedTableCell.FontFamily;
+            }
             else if (SelectedParagraph is not null)
+            {
                 ActiveFontSize = SelectedParagraph.FontSize > 0 ? SelectedParagraph.FontSize : 14;
+                ActiveFontFamily = string.IsNullOrWhiteSpace(SelectedParagraph.FontFamily)
+                    ? "Microsoft JhengHei"
+                    : SelectedParagraph.FontFamily;
+            }
         }
         finally
         {
@@ -222,7 +422,30 @@ public partial class MainViewModel : ViewModelBase
             SelectedBlock = owningTable;
         SelectedParagraph = null;
         SelectedTableCell = cell;
-        SyncActiveFontSize();
+        SyncActiveFormatting();
+        UpdateSelectionInfo();
+    }
+
+    [RelayCommand]
+    private void SelectRibbonTab(string? tab)
+    {
+        if (string.IsNullOrWhiteSpace(tab))
+            return;
+        RibbonTab = tab;
+    }
+
+    [RelayCommand]
+    private void ToggleSidebar()
+    {
+        ShowSidebar = !ShowSidebar;
+        StatusText = ShowSidebar ? "已顯示右側屬性面板" : "已隱藏右側屬性面板";
+    }
+
+    [RelayCommand]
+    private void ToggleNavigator()
+    {
+        ShowNavigator = !ShowNavigator;
+        StatusText = ShowNavigator ? "已顯示左側導覽" : "已隱藏左側導覽";
     }
 
     partial void OnDocumentChanged(WordDocument? value)
@@ -232,15 +455,43 @@ public partial class MainViewModel : ViewModelBase
         UpdateTitle();
     }
 
-    partial void OnIsDirtyChanged(bool value) => UpdateTitle();
+    partial void OnIsDirtyChanged(bool value)
+    {
+        UpdateTitle();
+        UpdateSaveStatusDisplay();
+    }
 
     partial void OnFileNameChanged(string? value) => UpdateTitle();
+
+    partial void OnFilePathChanged(string? value) => UpdateSaveStatusDisplay();
 
     private void UpdateTitle()
     {
         var name = string.IsNullOrWhiteSpace(FileName) ? "未命名文件" : FileName;
         var dirty = IsDirty ? " *" : string.Empty;
-        WindowTitle = $"{name}{dirty} — DocxAvalonia";
+        DocumentTitleDisplay = Path.GetFileNameWithoutExtension(name);
+        if (string.IsNullOrWhiteSpace(DocumentTitleDisplay))
+            DocumentTitleDisplay = "未命名文件";
+        WindowTitle = $"{DocumentTitleDisplay}{dirty} - DocxAvalonia Writer";
+        UpdateSaveStatusDisplay();
+    }
+
+    private void UpdateSaveStatusDisplay()
+    {
+        if (IsDirty)
+        {
+            SaveStatusDisplay = !string.IsNullOrWhiteSpace(FilePath) && AutoSaveEnabled
+                ? "自動儲存已開啟 · 有未儲存變更"
+                : "有未儲存變更";
+        }
+        else if (!string.IsNullOrWhiteSpace(FilePath))
+        {
+            SaveStatusDisplay = "已儲存";
+        }
+        else
+        {
+            SaveStatusDisplay = "尚未儲存";
+        }
     }
 
     private void RefreshStatistics()
@@ -303,6 +554,7 @@ public partial class MainViewModel : ViewModelBase
                     Italic = p.IsItalic,
                     Underline = p.IsUnderline,
                     FontSize = p.FontSize,
+                    FontFamily = p.FontFamily,
                     List = p.ListKind.ToString(),
                 },
                 TableBlock t => new BlockDto
@@ -312,6 +564,7 @@ public partial class MainViewModel : ViewModelBase
                     {
                         Text = c.Text,
                         FontSize = c.FontSize,
+                        FontFamily = c.FontFamily,
                         Bold = c.IsBold,
                         Italic = c.IsItalic,
                         Underline = c.IsUnderline,
@@ -352,6 +605,9 @@ public partial class MainViewModel : ViewModelBase
                         {
                             Text = cell.Text ?? string.Empty,
                             FontSize = cell.FontSize > 0 ? cell.FontSize : 14,
+                            FontFamily = string.IsNullOrWhiteSpace(cell.FontFamily)
+                                ? "Microsoft JhengHei"
+                                : cell.FontFamily,
                             IsBold = cell.Bold,
                             IsItalic = cell.Italic,
                             IsUnderline = cell.Underline,
@@ -402,6 +658,7 @@ public partial class MainViewModel : ViewModelBase
                     IsItalic = b.Italic,
                     IsUnderline = b.Underline,
                     FontSize = b.FontSize <= 0 ? 14 : b.FontSize,
+                    FontFamily = string.IsNullOrWhiteSpace(b.FontFamily) ? "Microsoft JhengHei" : b.FontFamily,
                     ListKind = Enum.TryParse<ListKind>(b.List, out var l) ? l : ListKind.None,
                 });
             }
@@ -1588,6 +1845,7 @@ public partial class MainViewModel : ViewModelBase
         public bool Italic { get; set; }
         public bool Underline { get; set; }
         public double FontSize { get; set; }
+        public string? FontFamily { get; set; }
         public string? List { get; set; }
         public List<List<string>>? Rows { get; set; }
         public List<List<CellDto>>? TableCells { get; set; }
@@ -1601,6 +1859,7 @@ public partial class MainViewModel : ViewModelBase
     {
         public string? Text { get; set; }
         public double FontSize { get; set; }
+        public string? FontFamily { get; set; }
         public bool Bold { get; set; }
         public bool Italic { get; set; }
         public bool Underline { get; set; }

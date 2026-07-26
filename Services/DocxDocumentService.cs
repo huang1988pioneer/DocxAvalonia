@@ -144,6 +144,7 @@ public sealed class DocxDocumentService
         var italic = false;
         var underline = false;
         double? fontSize = null;
+        string? fontFamily = null;
         var runCount = 0;
         var boldCount = 0;
         var italicCount = 0;
@@ -176,6 +177,8 @@ public sealed class DocxDocumentService
             var half = props?.FontSize?.Val?.Value;
             if (half is not null && double.TryParse(half, out var hp))
                 fontSize ??= hp / 2.0;
+
+            fontFamily ??= ResolveFontFamilyName(props?.RunFonts);
         }
 
         foreach (var hyperlink in paragraph.Elements<Hyperlink>())
@@ -235,8 +238,19 @@ public sealed class DocxDocumentService
                 ParagraphStyleKind.Heading3 => 18,
                 _ => 14,
             },
+            FontFamily = fontFamily ?? "Microsoft JhengHei",
             ListKind = listKind,
         };
+    }
+
+    private static string? ResolveFontFamilyName(RunFonts? fonts)
+    {
+        if (fonts is null)
+            return null;
+        return fonts.EastAsia?.Value
+               ?? fonts.Ascii?.Value
+               ?? fonts.HighAnsi?.Value
+               ?? fonts.ComplexScript?.Value;
     }
 
     private static IEnumerable<ImageBlock> ExtractImages(Paragraph paragraph, MainDocumentPart main)
@@ -413,6 +427,7 @@ public sealed class DocxDocumentService
         var bold = false;
         var italic = false;
         var underline = false;
+        string? fontFamily = null;
         var alignment = ParagraphAlignmentKind.Left;
 
         var firstPara = paragraphs.FirstOrDefault();
@@ -441,6 +456,7 @@ public sealed class DocxDocumentService
                 var half = props?.FontSize?.Val?.Value;
                 if (half is not null && double.TryParse(half, out var hp) && hp > 0)
                     fontSize = hp / 2.0;
+                fontFamily = ResolveFontFamilyName(props?.RunFonts);
             }
         }
 
@@ -448,6 +464,7 @@ public sealed class DocxDocumentService
         {
             Text = text,
             FontSize = fontSize,
+            FontFamily = fontFamily ?? "Microsoft JhengHei",
             IsBold = bold,
             IsItalic = italic,
             IsUnderline = underline,
@@ -556,12 +573,8 @@ public sealed class DocxDocumentService
         if (model.IsUnderline)
             rPr.AppendChild(new Underline { Val = UnderlineValues.Single });
         rPr.AppendChild(new FontSize { Val = ((int)Math.Round(model.FontSize * 2)).ToString() });
-        rPr.AppendChild(new RunFonts
-        {
-            Ascii = "Microsoft JhengHei",
-            EastAsia = "Microsoft JhengHei",
-            HighAnsi = "Calibri",
-        });
+        var fontName = string.IsNullOrWhiteSpace(model.FontFamily) ? "Microsoft JhengHei" : model.FontFamily.Trim();
+        rPr.AppendChild(CreateRunFonts(fontName));
 
         var paragraph = new Paragraph(pPr);
         var lines = (model.Text ?? string.Empty).Replace("\r\n", "\n").Split('\n');
@@ -579,6 +592,40 @@ public sealed class DocxDocumentService
             paragraph.AppendChild(new Run((RunProperties)rPr.CloneNode(true), new Text(string.Empty)));
 
         return paragraph;
+    }
+
+    private static RunFonts CreateRunFonts(string fontName)
+    {
+        // Latin-friendly fonts use themselves for ASCII/HighAnsi; CJK names map East Asia primarily.
+        var isCjk = fontName.Contains("JhengHei", StringComparison.OrdinalIgnoreCase)
+                    || fontName.Contains("YaHei", StringComparison.OrdinalIgnoreCase)
+                    || fontName.Contains("Ming", StringComparison.OrdinalIgnoreCase)
+                    || fontName.Contains("Song", StringComparison.OrdinalIgnoreCase)
+                    || fontName.Contains("Kai", StringComparison.OrdinalIgnoreCase)
+                    || fontName.Contains("Gothic", StringComparison.OrdinalIgnoreCase)
+                    || fontName.Contains("Noto Sans CJK", StringComparison.OrdinalIgnoreCase)
+                    || fontName.Contains("Noto Sans TC", StringComparison.OrdinalIgnoreCase)
+                    || fontName.Contains("Source Han", StringComparison.OrdinalIgnoreCase)
+                    || fontName.Contains("蘋方", StringComparison.Ordinal)
+                    || fontName.Contains("微软", StringComparison.Ordinal)
+                    || fontName.Contains("微軟", StringComparison.Ordinal);
+
+        if (isCjk)
+        {
+            return new RunFonts
+            {
+                Ascii = fontName,
+                EastAsia = fontName,
+                HighAnsi = "Calibri",
+            };
+        }
+
+        return new RunFonts
+        {
+            Ascii = fontName,
+            EastAsia = "Microsoft JhengHei",
+            HighAnsi = fontName,
+        };
     }
 
     private static Paragraph CreateImageParagraph(MainDocumentPart main, ImageBlock model, ref int imageIndex)
@@ -713,12 +760,8 @@ public sealed class DocxDocumentService
             rPr.AppendChild(new Underline { Val = UnderlineValues.Single });
         var size = cell.FontSize > 0 ? cell.FontSize : 14;
         rPr.AppendChild(new FontSize { Val = ((int)Math.Round(size * 2)).ToString() });
-        rPr.AppendChild(new RunFonts
-        {
-            Ascii = "Microsoft JhengHei",
-            EastAsia = "Microsoft JhengHei",
-            HighAnsi = "Calibri",
-        });
+        var fontName = string.IsNullOrWhiteSpace(cell.FontFamily) ? "Microsoft JhengHei" : cell.FontFamily.Trim();
+        rPr.AppendChild(CreateRunFonts(fontName));
 
         var paragraph = new Paragraph(pPr);
         var lines = (cell.Text ?? string.Empty).Replace("\r\n", "\n").Split('\n');
