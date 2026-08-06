@@ -778,25 +778,38 @@ public partial class MainViewModel : ViewModelBase
 
         var window = GetMainWindow();
         if (window is null)
-            return;
-
-        var files = await window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "開啟 Word 文件",
-            AllowMultiple = false,
-            FileTypeFilter = [DocxFileType(), AllFileType()],
-        });
-        if (files.Count == 0)
-            return;
-
-        var path = files[0].TryGetLocalPath();
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            StatusText = "無法讀取檔案路徑。";
+            StatusText = "無法開啟檔案對話框（主視窗未就緒）。";
             return;
         }
 
-        await LoadDocumentAsync(path);
+        try
+        {
+            var files = await window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "開啟 Word 文件",
+                AllowMultiple = false,
+                FileTypeFilter = [DocxFileType(), AllFileType()],
+            });
+            if (files.Count == 0)
+            {
+                StatusText = "已取消開啟。";
+                return;
+            }
+
+            var path = files[0].TryGetLocalPath();
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                StatusText = "無法讀取檔案路徑。";
+                return;
+            }
+
+            await LoadDocumentAsync(path);
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"開啟失敗：{ex.Message}";
+        }
     }
 
     public async Task LoadDocumentAsync(string path)

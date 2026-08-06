@@ -22,6 +22,7 @@
     </Design.DataContext>
 
     <Window.KeyBindings>
+        <!-- Windows / Linux -->
         <KeyBinding Gesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
         <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenDocumentCommand}" />
         <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveDocumentCommand}" />
@@ -33,7 +34,51 @@
         <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
         <KeyBinding Gesture="Ctrl+F" Command="{Binding ToggleFindPanelCommand}" />
         <KeyBinding Gesture="Ctrl+Enter" Command="{Binding InsertParagraphCommand}" />
+        <!-- macOS Command key -->
+        <KeyBinding Gesture="Meta+N" Command="{Binding NewDocumentCommand}" />
+        <KeyBinding Gesture="Meta+O" Command="{Binding OpenDocumentCommand}" />
+        <KeyBinding Gesture="Meta+S" Command="{Binding SaveDocumentCommand}" />
+        <KeyBinding Gesture="Meta+Shift+S" Command="{Binding SaveDocumentAsCommand}" />
+        <KeyBinding Gesture="Meta+B" Command="{Binding ToggleBoldCommand}" />
+        <KeyBinding Gesture="Meta+I" Command="{Binding ToggleItalicCommand}" />
+        <KeyBinding Gesture="Meta+U" Command="{Binding ToggleUnderlineCommand}" />
+        <KeyBinding Gesture="Meta+Z" Command="{Binding UndoCommand}" />
+        <KeyBinding Gesture="Meta+Shift+Z" Command="{Binding RedoCommand}" />
+        <KeyBinding Gesture="Meta+Y" Command="{Binding RedoCommand}" />
+        <KeyBinding Gesture="Meta+F" Command="{Binding ToggleFindPanelCommand}" />
+        <KeyBinding Gesture="Meta+Enter" Command="{Binding InsertParagraphCommand}" />
     </Window.KeyBindings>
+
+    <!-- macOS menu bar: File -->
+    <NativeMenu.Menu>
+        <NativeMenu>
+            <NativeMenuItem Header="檔案">
+                <NativeMenuItem.Menu>
+                    <NativeMenu>
+                        <NativeMenuItem Header="新建" Gesture="Meta+N" Command="{Binding NewDocumentCommand}" />
+                        <NativeMenuItem Header="開啟…" Gesture="Meta+O" Command="{Binding OpenDocumentCommand}" />
+                        <NativeMenuItemSeparator />
+                        <NativeMenuItem Header="儲存" Gesture="Meta+S" Command="{Binding SaveDocumentCommand}" />
+                        <NativeMenuItem Header="另存新檔…" Gesture="Meta+Shift+S" Command="{Binding SaveDocumentAsCommand}" />
+                    </NativeMenu>
+                </NativeMenuItem.Menu>
+            </NativeMenuItem>
+            <NativeMenuItem Header="編輯">
+                <NativeMenuItem.Menu>
+                    <NativeMenu>
+                        <NativeMenuItem Header="復原" Gesture="Meta+Z" Command="{Binding UndoCommand}" />
+                        <NativeMenuItem Header="重做" Gesture="Meta+Shift+Z" Command="{Binding RedoCommand}" />
+                        <NativeMenuItemSeparator />
+                        <NativeMenuItem Header="剪下" Command="{Binding CutCommand}" />
+                        <NativeMenuItem Header="複製" Command="{Binding CopyCommand}" />
+                        <NativeMenuItem Header="貼上" Command="{Binding PasteCommand}" />
+                        <NativeMenuItemSeparator />
+                        <NativeMenuItem Header="尋找／取代" Gesture="Meta+F" Command="{Binding ToggleFindPanelCommand}" />
+                    </NativeMenu>
+                </NativeMenuItem.Menu>
+            </NativeMenuItem>
+        </NativeMenu>
+    </NativeMenu.Menu>
 
     <DockPanel>
         <!-- ═══ Theme chrome (Word / LO / Docs / Zoho / WPS / FreeOffice) ═══ -->
@@ -173,8 +218,10 @@
                         <TextBlock Text="{Binding AutoSaveStatusText}" FontSize="11" Foreground="#7A8899" VerticalAlignment="Center" />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <Button Content="匯出" Command="{Binding SaveDocumentAsCommand}" Classes="zoho-ghost" />
-                        <Button Content="儲存" Command="{Binding SaveDocumentCommand}" Classes="zoho-primary" ToolTip.Tip="Ctrl+S" />
+                        <Button Content="新建" Command="{Binding NewDocumentCommand}" Classes="zoho-ghost" ToolTip.Tip="新建文件" />
+                        <Button Content="開啟" Command="{Binding OpenDocumentCommand}" Classes="zoho-ghost" ToolTip.Tip="開啟 .docx（⌘O）" />
+                        <Button Content="另存" Command="{Binding SaveDocumentAsCommand}" Classes="zoho-ghost" ToolTip.Tip="另存新檔" />
+                        <Button Content="儲存" Command="{Binding SaveDocumentCommand}" Classes="zoho-primary" ToolTip.Tip="儲存（⌘S）" />
                     </StackPanel>
                 </Grid>
 
@@ -261,9 +308,10 @@
                             <Border Classes="zoho-group">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Spacing="3">
-                                        <Button Content="新建" Command="{Binding NewDocumentCommand}" Classes="zoho-tbtn" />
-                                        <Button Content="開啟" Command="{Binding OpenDocumentCommand}" Classes="zoho-tbtn" />
-                                        <Button Content="儲存" Command="{Binding SaveDocumentCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="新建" Command="{Binding NewDocumentCommand}" Classes="zoho-tbtn" ToolTip.Tip="新建文件（⌘N）" />
+                                        <Button Content="開啟…" Command="{Binding OpenDocumentCommand}" Classes="zoho-tbtn" ToolTip.Tip="開啟 Word 文件（⌘O）" />
+                                        <Button Content="儲存" Command="{Binding SaveDocumentCommand}" Classes="zoho-tbtn" ToolTip.Tip="儲存（⌘S）" />
+                                        <Button Content="另存" Command="{Binding SaveDocumentAsCommand}" Classes="zoho-tbtn" ToolTip.Tip="另存新檔（⌘⇧S）" />
                                     </StackPanel>
                                     <TextBlock Text="檔案" Classes="zoho-group-label" />
                                 </StackPanel>
@@ -564,7 +612,12 @@
                     </Border>
                     <ScrollViewer Padding="10,8" VerticalScrollBarVisibility="Auto">
                         <StackPanel Spacing="10">
-                            <TextBlock Text="快速動作" Classes="zoho-section-label" />
+                            <TextBlock Text="檔案" Classes="zoho-section-label" />
+                            <Button Content="📄 開啟文件…" Command="{Binding OpenDocumentCommand}" Classes="zoho-nav-item" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" ToolTip.Tip="開啟 .docx（⌘O）" />
+                            <Button Content="🆕 新建文件" Command="{Binding NewDocumentCommand}" Classes="zoho-nav-item" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
+                            <Button Content="💾 儲存" Command="{Binding SaveDocumentCommand}" Classes="zoho-nav-item" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
+                            <Button Content="💾 另存新檔…" Command="{Binding SaveDocumentAsCommand}" Classes="zoho-nav-item" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
+                            <TextBlock Text="快速動作" Classes="zoho-section-label" Margin="0,8,0,0" />
                             <Button Content="＋ 段落" Command="{Binding InsertParagraphCommand}" Classes="zoho-nav-item" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
                             <Button Content="＋ 標題" Command="{Binding InsertHeadingCommand}" Classes="zoho-nav-item" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
                             <Button Content="＋ 表格" Command="{Binding InsertTableCommand}" Classes="zoho-nav-item" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
