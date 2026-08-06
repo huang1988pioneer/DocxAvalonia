@@ -670,7 +670,7 @@ public sealed class DocxDocumentService
                     new DW.EffectExtent { LeftEdge = 0L, TopEdge = 0L, RightEdge = 0L, BottomEdge = 0L },
                     new DW.DocProperties { Id = (uint)imageIndex, Name = model.FileName ?? $"Picture {imageIndex}" },
                     new DW.NonVisualGraphicFrameDrawingProperties(
-                        new A.GraphicFrameLocks { NoChangeAspect = true }),
+                        new A.GraphicFrameLocks { NoChangeAspect = false }), // free stretch allowed
                     new A.Graphic(
                         new A.GraphicData(
                             new PIC.Picture(

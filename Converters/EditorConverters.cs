@@ -69,6 +69,13 @@ public static class EditorConverters
             _ => id ?? string.Empty,
         });
 
+    /// <summary>Selected image gets a blue border; unselected stays light cyan.</summary>
+    public static readonly IValueConverter ImageSelectionBrush =
+        new FuncValueConverter<bool, IBrush>(selected =>
+            selected
+                ? new SolidColorBrush(Color.Parse("#00A3E0"))
+                : new SolidColorBrush(Color.Parse("#B3E5F5")));
+
     private sealed class StringEqualsConverter : IValueConverter
     {
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)

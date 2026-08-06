@@ -314,6 +314,19 @@ public partial class MainViewModel : ViewModelBase
 
     partial void OnSelectedImageChanged(ImageBlock? value)
     {
+        // Clear previous selection chrome (resize handles).
+        if (Document is not null)
+        {
+            foreach (var img in Document.Blocks.OfType<ImageBlock>())
+            {
+                if (!ReferenceEquals(img, value) && img.IsSelected)
+                    img.IsSelected = false;
+            }
+        }
+
+        if (value is not null)
+            value.IsSelected = true;
+
         UpdateImageSizeText();
         UpdateSelectionInfo();
     }
@@ -1646,6 +1659,64 @@ public partial class MainViewModel : ViewModelBase
         UpdateImageSizeText();
         MarkDirty();
         StatusText = $"圖片寬度：{SelectedImage.SizeLabel}";
+    }
+
+    /// <summary>
+    /// Stretch image one step in a named direction (n/s/e/w/ne/nw/se/sw).
+    /// Used by toolbar buttons as a complement to drag handles.
+    /// </summary>
+    [RelayCommand]
+    private void ImageStretch(string? direction)
+    {
+        if (!RequireSelectedImage())
+            return;
+
+        var handle = (direction ?? string.Empty).Trim().ToLowerInvariant();
+        if (handle is not ("n" or "s" or "e" or "w" or "ne" or "nw" or "se" or "sw"))
+        {
+            StatusText = "無效的拉伸方向。";
+            return;
+        }
+
+        const double step = 24;
+        PushUndo();
+        var img = SelectedImage!;
+        var w = img.DisplayWidth > 0 ? img.DisplayWidth : 400;
+        var h = img.ResolvedHeight;
+
+        // ApplyHandleDelta: east/south use +delta to grow; west/north use −delta to grow.
+        double dx = 0, dy = 0;
+        if (handle is "e" or "ne" or "se") dx = step;
+        if (handle is "w" or "nw" or "sw") dx = -step;
+        if (handle is "s" or "se" or "sw") dy = step;
+        if (handle is "n" or "ne" or "nw") dy = -step;
+
+        img.ApplyHandleDelta(handle, dx, dy, w, h);
+        UpdateImageSizeText();
+        MarkDirty();
+        StatusText = $"圖片拉伸（{handle.ToUpperInvariant()}）：{img.SizeLabel}";
+    }
+
+    /// <summary>Called by view during drag-resize so status / dirty track live updates.</summary>
+    public void NotifyImageResizedLive(ImageBlock image, bool markDirty)
+    {
+        if (!ReferenceEquals(SelectedImage, image))
+        {
+            SelectedImage = image;
+            SelectedBlock = image;
+        }
+
+        UpdateImageSizeText();
+        UpdateSelectionInfo();
+        if (markDirty)
+            MarkDirty();
+    }
+
+    /// <summary>Push undo snapshot once at the start of an image drag-resize.</summary>
+    public void BeginImageResizeUndo()
+    {
+        if (SelectedImage is not null || SelectedBlock is ImageBlock)
+            PushUndo();
     }
 
     [RelayCommand]

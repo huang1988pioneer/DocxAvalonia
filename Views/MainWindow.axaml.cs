@@ -1,4 +1,5 @@
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -13,6 +14,15 @@ public partial class MainWindow : Window
 {
     /// <summary>Cell under the last right-click, so menu acts on the correct table position.</summary>
     private Control? _tableContextSource;
+
+    // ── Image 8-direction drag resize state ──
+    private bool _imageResizing;
+    private string _imageResizeHandle = "se";
+    private ImageBlock? _imageResizeTarget;
+    private Point _imageResizeStartPoint;
+    private double _imageResizeStartWidth;
+    private double _imageResizeStartHeight;
+    private bool _imageResizeUndoPushed;
 
     public MainWindow()
     {
@@ -94,7 +104,7 @@ public partial class MainWindow : Window
         if (DataContext is not MainViewModel vm || sender is not Control control)
             return;
 
-        // Select image block for resize commands
+        // Select image block for resize commands / handles
         for (var c = control as Control; c is not null; c = c.GetVisualParent() as Control)
         {
             if (c.DataContext is ImageBlock image)
@@ -105,6 +115,104 @@ public partial class MainWindow : Window
                 return;
             }
         }
+    }
+
+    private void OnImageResizeHandlePressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is not Control handle)
+            return;
+
+        var image = FindImageBlock(handle);
+        if (image is null)
+            return;
+
+        if (DataContext is MainViewModel vm)
+        {
+            vm.SelectedBlock = image;
+            vm.SelectedImage = image;
+        }
+
+        var props = e.GetCurrentPoint(this).Properties;
+        if (!props.IsLeftButtonPressed)
+            return;
+
+        _imageResizing = true;
+        _imageResizeTarget = image;
+        _imageResizeHandle = handle.Tag?.ToString() ?? "se";
+        _imageResizeStartPoint = e.GetPosition(this);
+        _imageResizeStartWidth = image.DisplayWidth > 0 ? image.DisplayWidth : 400;
+        _imageResizeStartHeight = image.ResolvedHeight;
+        _imageResizeUndoPushed = false;
+
+        e.Pointer.Capture(handle);
+        e.Handled = true;
+    }
+
+    private void OnImageResizeHandleMoved(object? sender, PointerEventArgs e)
+    {
+        if (!_imageResizing || _imageResizeTarget is null)
+            return;
+
+        var pos = e.GetPosition(this);
+        var dx = pos.X - _imageResizeStartPoint.X;
+        var dy = pos.Y - _imageResizeStartPoint.Y;
+
+        if (!_imageResizeUndoPushed && (Math.Abs(dx) > 1 || Math.Abs(dy) > 1))
+        {
+            if (DataContext is MainViewModel vm)
+                vm.BeginImageResizeUndo();
+            _imageResizeUndoPushed = true;
+        }
+
+        _imageResizeTarget.ApplyHandleDelta(
+            _imageResizeHandle, dx, dy,
+            _imageResizeStartWidth, _imageResizeStartHeight);
+
+        if (DataContext is MainViewModel liveVm)
+            liveVm.NotifyImageResizedLive(_imageResizeTarget, markDirty: false);
+
+        e.Handled = true;
+    }
+
+    private void OnImageResizeHandleReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        FinishImageResize(sender as Control, e.Pointer);
+        e.Handled = true;
+    }
+
+    private void OnImageResizeHandleCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+    {
+        FinishImageResize(sender as Control, pointer: null);
+    }
+
+    private void FinishImageResize(Control? handle, IPointer? pointer)
+    {
+        if (_imageResizing && _imageResizeTarget is not null && DataContext is MainViewModel vm)
+            vm.NotifyImageResizedLive(_imageResizeTarget, markDirty: _imageResizeUndoPushed);
+
+        _imageResizing = false;
+        _imageResizeTarget = null;
+        _imageResizeUndoPushed = false;
+
+        try
+        {
+            pointer?.Capture(null);
+        }
+        catch
+        {
+            // ignore release errors
+        }
+    }
+
+    private static ImageBlock? FindImageBlock(Control control)
+    {
+        for (var c = control as Control; c is not null; c = c.GetVisualParent() as Control)
+        {
+            if (c.DataContext is ImageBlock image)
+                return image;
+        }
+
+        return null;
     }
 
     private void OnTableCellGotFocus(object? sender, GotFocusEventArgs e)

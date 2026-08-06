@@ -79,6 +79,52 @@
         <Setter Property="Stretch" Value="Uniform" />
     </Style>
 
+    <!-- Image free-resize handles (8 directions) -->
+    <Style Selector="Border.img-handle">
+        <Setter Property="Background" Value="White" />
+        <Setter Property="BorderBrush" Value="#00A3E0" />
+        <Setter Property="BorderThickness" Value="1.5" />
+        <Setter Property="CornerRadius" Value="1" />
+        <Setter Property="ZIndex" Value="20" />
+        <Setter Property="IsHitTestVisible" Value="True" />
+    </Style>
+    <Style Selector="Border.img-handle:pointerover">
+        <Setter Property="Background" Value="#E8F7FC" />
+        <Setter Property="BorderBrush" Value="#0078A8" />
+    </Style>
+
+    <!-- Table edge add-cell buttons -->
+    <Style Selector="Button.table-edge-btn">
+        <Setter Property="Padding" Value="10,2" />
+        <Setter Property="Margin" Value="0,2" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="#0078A8" />
+        <Setter Property="Background" Value="#E8F7FC" />
+        <Setter Property="BorderBrush" Value="#B3E5F5" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="MinHeight" Value="22" />
+    </Style>
+    <Style Selector="Button.table-edge-btn:pointerover">
+        <Setter Property="Background" Value="#D0F0FA" />
+        <Setter Property="BorderBrush" Value="#00A3E0" />
+    </Style>
+    <Style Selector="Button.table-edge-btn-v">
+        <Setter Property="Padding" Value="4,8" />
+        <Setter Property="Margin" Value="2,0" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="#0078A8" />
+        <Setter Property="Background" Value="#E8F7FC" />
+        <Setter Property="BorderBrush" Value="#B3E5F5" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="MinWidth" Value="28" />
+    </Style>
+    <Style Selector="Button.table-edge-btn-v:pointerover">
+        <Setter Property="Background" Value="#D0F0FA" />
+        <Setter Property="BorderBrush" Value="#00A3E0" />
+    </Style>
+
     <Style Selector="TextBlock.docx-empty">
         <Setter Property="FontSize" Value="15" />
         <Setter Property="Foreground" Value="#5A6A7A" />

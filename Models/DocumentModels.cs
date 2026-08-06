@@ -139,6 +139,11 @@ public partial class TableBlock : DocumentBlock
 
     public int RowCount => Rows.Count;
 
+    public TableBlock()
+    {
+        Rows.CollectionChanged += (_, _) => NotifyShapeChanged();
+    }
+
     public static TableBlock Create(int rows, int cols)
     {
         rows = Math.Clamp(rows, 1, MaxRows);
@@ -187,6 +192,7 @@ public partial class TableBlock : DocumentBlock
         else
             Rows.Insert(afterRowIndex.Value + 1, row);
 
+        NotifyShapeChanged();
         return row;
     }
 
@@ -203,6 +209,7 @@ public partial class TableBlock : DocumentBlock
             var row = new TableRowBlock();
             row.Cells.Add(new TableCellBlock());
             Rows.Add(row);
+            NotifyShapeChanged();
             return;
         }
 
@@ -218,6 +225,8 @@ public partial class TableBlock : DocumentBlock
             else
                 row.Cells.Insert(afterColIndex.Value + 1, cell);
         }
+
+        NotifyShapeChanged();
     }
 
     public bool DeleteRowAt(int rowIndex)
@@ -227,6 +236,7 @@ public partial class TableBlock : DocumentBlock
         if (Rows.Count <= 1)
             throw new InvalidOperationException("至少需保留一列。");
         Rows.RemoveAt(rowIndex);
+        NotifyShapeChanged();
         return true;
     }
 
@@ -245,6 +255,7 @@ public partial class TableBlock : DocumentBlock
                 row.Cells.RemoveAt(colIndex);
         }
 
+        NotifyShapeChanged();
         return true;
     }
 
@@ -265,11 +276,28 @@ public partial class TableBlock : DocumentBlock
         colIndex = -1;
         return false;
     }
+
+    private void NotifyShapeChanged()
+    {
+        OnPropertyChanged(nameof(RowCount));
+        OnPropertyChanged(nameof(ColumnCount));
+        foreach (var row in Rows)
+            row.NotifyColumnCountChanged();
+    }
 }
 
 public partial class TableRowBlock : ObservableObject
 {
     public ObservableCollection<TableCellBlock> Cells { get; } = new();
+
+    public int ColumnCount => Cells.Count;
+
+    public TableRowBlock()
+    {
+        Cells.CollectionChanged += (_, _) => NotifyColumnCountChanged();
+    }
+
+    public void NotifyColumnCountChanged() => OnPropertyChanged(nameof(ColumnCount));
 }
 
 public partial class TableCellBlock : ObservableObject
@@ -340,6 +368,10 @@ public partial class ImageBlock : DocumentBlock
     [ObservableProperty]
     private double _displayHeight;
 
+    /// <summary>True when this image is the active selection (shows resize handles).</summary>
+    [ObservableProperty]
+    private bool _isSelected;
+
     /// <summary>Natural pixel size once decoded (0 if unknown).</summary>
     public int PixelWidth { get; private set; }
 
@@ -347,6 +379,21 @@ public partial class ImageBlock : DocumentBlock
 
     public const double MinDisplayWidth = 40;
     public const double MaxDisplayWidth = 720;
+    public const double MinDisplayHeight = 24;
+    public const double MaxDisplayHeight = 2000;
+
+    /// <summary>Effective display height (never zero once size is known).</summary>
+    public double ResolvedHeight
+    {
+        get
+        {
+            if (DisplayHeight > 0 && !double.IsNaN(DisplayHeight))
+                return DisplayHeight;
+            if (PixelWidth > 0 && PixelHeight > 0 && DisplayWidth > 0)
+                return DisplayWidth * PixelHeight / PixelWidth;
+            return Math.Max(MinDisplayHeight, DisplayWidth * 0.75);
+        }
+    }
 
     /// <summary>Resize keeping aspect ratio when pixel size is known.</summary>
     public void ResizeToWidth(double width)
@@ -361,13 +408,50 @@ public partial class ImageBlock : DocumentBlock
             DisplayHeight = width * 0.75;
     }
 
+    /// <summary>Free resize (may change aspect ratio). Used by 8-direction handles.</summary>
+    public void ResizeToSize(double width, double height)
+    {
+        if (double.IsNaN(width) || double.IsInfinity(width)
+            || double.IsNaN(height) || double.IsInfinity(height))
+            return;
+
+        DisplayWidth = Math.Clamp(width, MinDisplayWidth, MaxDisplayWidth);
+        DisplayHeight = Math.Clamp(height, MinDisplayHeight, MaxDisplayHeight);
+    }
+
+    /// <summary>
+    /// Apply drag delta from an 8-direction handle.
+    /// Handles: n, s, e, w, ne, nw, se, sw.
+    /// </summary>
+    public void ApplyHandleDelta(string handle, double dx, double dy, double startWidth, double startHeight)
+    {
+        var w = startWidth;
+        var h = startHeight;
+        handle = (handle ?? string.Empty).Trim().ToLowerInvariant();
+
+        // Horizontal: east grows, west shrinks (inline images only change size, not origin).
+        if (handle is "e" or "ne" or "se")
+            w = startWidth + dx;
+        else if (handle is "w" or "nw" or "sw")
+            w = startWidth - dx;
+
+        // Vertical: south grows, north shrinks.
+        if (handle is "s" or "se" or "sw")
+            h = startHeight + dy;
+        else if (handle is "n" or "ne" or "nw")
+            h = startHeight - dy;
+
+        ResizeToSize(w, h);
+    }
+
     /// <summary>Scale current display size by a factor (e.g. 1.15 = larger).</summary>
     public void ResizeByFactor(double factor)
     {
         if (factor <= 0 || double.IsNaN(factor) || double.IsInfinity(factor))
             return;
         var w = DisplayWidth > 0 ? DisplayWidth : 400;
-        ResizeToWidth(w * factor);
+        var h = ResolvedHeight;
+        ResizeToSize(w * factor, h * factor);
     }
 
     public string SizeLabel
@@ -375,14 +459,22 @@ public partial class ImageBlock : DocumentBlock
         get
         {
             var w = (int)Math.Round(DisplayWidth);
-            var h = DisplayHeight > 0 ? (int)Math.Round(DisplayHeight) : 0;
-            return h > 0 ? $"{w} × {h}" : $"{w} 寬";
+            var h = (int)Math.Round(ResolvedHeight);
+            return $"{w} × {h}";
         }
     }
 
-    partial void OnDisplayWidthChanged(double value) => OnPropertyChanged(nameof(SizeLabel));
+    partial void OnDisplayWidthChanged(double value)
+    {
+        OnPropertyChanged(nameof(SizeLabel));
+        OnPropertyChanged(nameof(ResolvedHeight));
+    }
 
-    partial void OnDisplayHeightChanged(double value) => OnPropertyChanged(nameof(SizeLabel));
+    partial void OnDisplayHeightChanged(double value)
+    {
+        OnPropertyChanged(nameof(SizeLabel));
+        OnPropertyChanged(nameof(ResolvedHeight));
+    }
 
     public bool HasPreview => Preview is not null;
 

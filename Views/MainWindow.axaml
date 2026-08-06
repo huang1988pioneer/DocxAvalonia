@@ -324,6 +324,20 @@
                                     <TextBlock Text="樣式" Classes="zoho-group-label" />
                                 </StackPanel>
                             </Border>
+                            <Border Classes="zoho-vsep" />
+                            <Border Classes="zoho-group">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="↑ 列" Command="{Binding TableInsertRowAboveCommand}" Classes="zoho-tbtn" ToolTip.Tip="在選取儲存格上方新增一列" />
+                                        <Button Content="↓ 列" Command="{Binding TableAddRowBelowCommand}" Classes="zoho-tbtn" ToolTip.Tip="在選取儲存格下方新增一列" />
+                                        <Button Content="← 欄" Command="{Binding TableInsertColumnLeftCommand}" Classes="zoho-tbtn" ToolTip.Tip="在選取儲存格左側新增一欄" />
+                                        <Button Content="→ 欄" Command="{Binding TableAddColumnRightCommand}" Classes="zoho-tbtn" ToolTip.Tip="在選取儲存格右側新增一欄" />
+                                        <Button Content="刪列" Command="{Binding TableDeleteRowCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="刪欄" Command="{Binding TableDeleteColumnCommand}" Classes="zoho-tbtn" />
+                                    </StackPanel>
+                                    <TextBlock Text="表格儲存格" Classes="zoho-group-label" />
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </ScrollViewer>
                 </Border>
@@ -356,29 +370,35 @@
                             <Border Classes="zoho-group">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Spacing="3">
-                                        <Button Content="↓ 列" Command="{Binding TableAddRowBelowCommand}" Classes="zoho-tbtn" />
-                                        <Button Content="↑ 列" Command="{Binding TableInsertRowAboveCommand}" Classes="zoho-tbtn" />
-                                        <Button Content="→ 欄" Command="{Binding TableAddColumnRightCommand}" Classes="zoho-tbtn" />
-                                        <Button Content="← 欄" Command="{Binding TableInsertColumnLeftCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="↑ 列" Command="{Binding TableInsertRowAboveCommand}" Classes="zoho-tbtn" ToolTip.Tip="向上新增列" />
+                                        <Button Content="↓ 列" Command="{Binding TableAddRowBelowCommand}" Classes="zoho-tbtn" ToolTip.Tip="向下新增列" />
+                                        <Button Content="← 欄" Command="{Binding TableInsertColumnLeftCommand}" Classes="zoho-tbtn" ToolTip.Tip="向左新增欄" />
+                                        <Button Content="→ 欄" Command="{Binding TableAddColumnRightCommand}" Classes="zoho-tbtn" ToolTip.Tip="向右新增欄" />
                                         <Button Content="刪列" Command="{Binding TableDeleteRowCommand}" Classes="zoho-tbtn" />
                                         <Button Content="刪欄" Command="{Binding TableDeleteColumnCommand}" Classes="zoho-tbtn" />
                                     </StackPanel>
-                                    <TextBlock Text="表格編輯" Classes="zoho-group-label" />
+                                    <TextBlock Text="表格編輯（先點選儲存格）" Classes="zoho-group-label" />
                                 </StackPanel>
                             </Border>
                             <Border Classes="zoho-vsep" />
                             <Border Classes="zoho-group">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="↖" Command="{Binding ImageStretchCommand}" CommandParameter="nw" Classes="zoho-tbtn" Width="32" ToolTip.Tip="左上拉伸" />
+                                        <Button Content="↑" Command="{Binding ImageStretchCommand}" CommandParameter="n" Classes="zoho-tbtn" Width="32" ToolTip.Tip="向上拉伸" />
+                                        <Button Content="↗" Command="{Binding ImageStretchCommand}" CommandParameter="ne" Classes="zoho-tbtn" Width="32" ToolTip.Tip="右上拉伸" />
+                                        <Button Content="←" Command="{Binding ImageStretchCommand}" CommandParameter="w" Classes="zoho-tbtn" Width="32" ToolTip.Tip="向左拉伸" />
+                                        <Button Content="→" Command="{Binding ImageStretchCommand}" CommandParameter="e" Classes="zoho-tbtn" Width="32" ToolTip.Tip="向右拉伸" />
+                                        <Button Content="↙" Command="{Binding ImageStretchCommand}" CommandParameter="sw" Classes="zoho-tbtn" Width="32" ToolTip.Tip="左下拉伸" />
+                                        <Button Content="↓" Command="{Binding ImageStretchCommand}" CommandParameter="s" Classes="zoho-tbtn" Width="32" ToolTip.Tip="向下拉伸" />
+                                        <Button Content="↘" Command="{Binding ImageStretchCommand}" CommandParameter="se" Classes="zoho-tbtn" Width="32" ToolTip.Tip="右下拉伸" />
                                         <Button Content="放大" Command="{Binding ImageEnlargeCommand}" Classes="zoho-tbtn" />
                                         <Button Content="縮小" Command="{Binding ImageShrinkCommand}" Classes="zoho-tbtn" />
                                         <Button Content="重設" Command="{Binding ImageResetSizeCommand}" Classes="zoho-tbtn" />
                                         <Button Content="頁寬" Command="{Binding ImageFitPageCommand}" Classes="zoho-tbtn" />
-                                        <Button Content="200" Command="{Binding ImageSetWidthCommand}" CommandParameter="200" Classes="zoho-tbtn" />
-                                        <Button Content="400" Command="{Binding ImageSetWidthCommand}" CommandParameter="400" Classes="zoho-tbtn" />
                                         <TextBlock Text="{Binding ImageSizeText}" VerticalAlignment="Center" FontSize="11" Foreground="#5A6A7A" Margin="6,0,0,0" MinWidth="80" />
                                     </StackPanel>
-                                    <TextBlock Text="圖片" Classes="zoho-group-label" />
+                                    <TextBlock Text="圖片拉伸（或拖曳圖片四角／四邊）" Classes="zoho-group-label" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -617,8 +637,34 @@
                             </Border>
                             <Border Classes="zoho-card">
                                 <StackPanel Spacing="6">
+                                    <TextBlock Text="表格" Classes="zoho-section-label" />
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="↑" Command="{Binding TableInsertRowAboveCommand}" Classes="zoho-tbtn" Width="36" ToolTip.Tip="向上新增列" />
+                                        <Button Content="↓" Command="{Binding TableAddRowBelowCommand}" Classes="zoho-tbtn" Width="36" ToolTip.Tip="向下新增列" />
+                                        <Button Content="←" Command="{Binding TableInsertColumnLeftCommand}" Classes="zoho-tbtn" Width="36" ToolTip.Tip="向左新增欄" />
+                                        <Button Content="→" Command="{Binding TableAddColumnRightCommand}" Classes="zoho-tbtn" Width="36" ToolTip.Tip="向右新增欄" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="刪列" Command="{Binding TableDeleteRowCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="刪欄" Command="{Binding TableDeleteColumnCommand}" Classes="zoho-tbtn" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="zoho-card">
+                                <StackPanel Spacing="6">
                                     <TextBlock Text="圖片" Classes="zoho-section-label" />
                                     <TextBlock Text="{Binding ImageSizeText}" FontSize="12" Foreground="#4A5A6A" TextWrapping="Wrap" />
+                                    <UniformGrid Rows="3" Columns="3" Width="120" HorizontalAlignment="Left">
+                                        <Button Content="↖" Command="{Binding ImageStretchCommand}" CommandParameter="nw" Classes="zoho-tbtn" Margin="1" />
+                                        <Button Content="↑" Command="{Binding ImageStretchCommand}" CommandParameter="n" Classes="zoho-tbtn" Margin="1" />
+                                        <Button Content="↗" Command="{Binding ImageStretchCommand}" CommandParameter="ne" Classes="zoho-tbtn" Margin="1" />
+                                        <Button Content="←" Command="{Binding ImageStretchCommand}" CommandParameter="w" Classes="zoho-tbtn" Margin="1" />
+                                        <Button Content="◎" Command="{Binding ImageResetSizeCommand}" Classes="zoho-tbtn" Margin="1" ToolTip.Tip="重設大小" />
+                                        <Button Content="→" Command="{Binding ImageStretchCommand}" CommandParameter="e" Classes="zoho-tbtn" Margin="1" />
+                                        <Button Content="↙" Command="{Binding ImageStretchCommand}" CommandParameter="sw" Classes="zoho-tbtn" Margin="1" />
+                                        <Button Content="↓" Command="{Binding ImageStretchCommand}" CommandParameter="s" Classes="zoho-tbtn" Margin="1" />
+                                        <Button Content="↘" Command="{Binding ImageStretchCommand}" CommandParameter="se" Classes="zoho-tbtn" Margin="1" />
+                                    </UniformGrid>
                                     <StackPanel Orientation="Horizontal" Spacing="3">
                                         <Button Content="放大" Command="{Binding ImageEnlargeCommand}" Classes="zoho-tbtn" />
                                         <Button Content="縮小" Command="{Binding ImageShrinkCommand}" Classes="zoho-tbtn" />
@@ -699,94 +745,215 @@
                                             </DataTemplate>
 
                                             <DataTemplate DataType="models:TableBlock">
-                                                <Border Margin="0,10,0,16"
-                                                        BorderBrush="#C5CDD8"
-                                                        BorderThickness="1"
-                                                        PointerPressed="OnBlockPointerPressed"
-                                                        ContextRequested="OnTableContextRequested">
-                                                    <Border.ContextMenu>
-                                                        <ContextMenu Opening="OnTableContextMenuOpening">
-                                                            <MenuItem Header="在下方新增列" Click="OnTableMenuAddRowBelow" />
-                                                            <MenuItem Header="在右側新增欄" Click="OnTableMenuAddColumnRight" />
-                                                            <Separator />
-                                                            <MenuItem Header="在上方插入列" Click="OnTableMenuInsertRowAbove" />
-                                                            <MenuItem Header="在左側插入欄" Click="OnTableMenuInsertColumnLeft" />
-                                                            <Separator />
-                                                            <MenuItem Header="刪除列" Click="OnTableMenuDeleteRow" />
-                                                            <MenuItem Header="刪除欄" Click="OnTableMenuDeleteColumn" />
-                                                        </ContextMenu>
-                                                    </Border.ContextMenu>
-                                                    <ItemsControl ItemsSource="{Binding Rows}">
-                                                        <ItemsControl.ItemTemplate>
-                                                            <DataTemplate DataType="models:TableRowBlock">
-                                                                <ItemsControl ItemsSource="{Binding Cells}">
-                                                                    <ItemsControl.ItemsPanel>
-                                                                        <ItemsPanelTemplate>
-                                                                            <UniformGrid Rows="1" />
-                                                                        </ItemsPanelTemplate>
-                                                                    </ItemsControl.ItemsPanel>
-                                                                    <ItemsControl.ItemTemplate>
-                                                                        <DataTemplate DataType="models:TableCellBlock">
-                                                                            <Border BorderBrush="#DCE2EA"
-                                                                                    BorderThickness="0.5"
-                                                                                    Padding="8,6"
-                                                                                    MinHeight="34"
-                                                                                    Background="White"
-                                                                                    PointerPressed="OnTableCellPointerPressed"
-                                                                                    ContextRequested="OnTableCellContextRequested">
-                                                                                <Border.ContextMenu>
-                                                                                    <ContextMenu Opening="OnTableContextMenuOpening">
-                                                                                        <MenuItem Header="在下方新增列" Click="OnTableMenuAddRowBelow" />
-                                                                                        <MenuItem Header="在右側新增欄" Click="OnTableMenuAddColumnRight" />
-                                                                                        <Separator />
-                                                                                        <MenuItem Header="在上方插入列" Click="OnTableMenuInsertRowAbove" />
-                                                                                        <MenuItem Header="在左側插入欄" Click="OnTableMenuInsertColumnLeft" />
-                                                                                        <Separator />
-                                                                                        <MenuItem Header="刪除列" Click="OnTableMenuDeleteRow" />
-                                                                                        <MenuItem Header="刪除欄" Click="OnTableMenuDeleteColumn" />
-                                                                                    </ContextMenu>
-                                                                                </Border.ContextMenu>
-                                                                                <TextBox Text="{Binding Text, Mode=TwoWay}"
-                                                                                         FontSize="{Binding FontSize}"
-                                                                                         FontFamily="{Binding FontFamily, Converter={x:Static conv:EditorConverters.FontFamilyFromName}}"
-                                                                                         FontWeight="{Binding IsBold, Converter={x:Static conv:EditorConverters.FontWeightFromBool}}"
-                                                                                         FontStyle="{Binding IsItalic, Converter={x:Static conv:EditorConverters.FontStyleFromBool}}"
-                                                                                         TextAlignment="{Binding Alignment, Converter={x:Static conv:EditorConverters.AlignmentFromKind}}"
-                                                                                         BorderThickness="0"
-                                                                                         Background="Transparent"
-                                                                                         TextWrapping="Wrap"
-                                                                                         AcceptsReturn="True"
-                                                                                         MinHeight="24"
-                                                                                         Foreground="#1A2332"
-                                                                                         CaretBrush="#00A3E0"
-                                                                                         GotFocus="OnTableCellGotFocus"
-                                                                                         ContextRequested="OnTableCellContextRequested" />
-                                                                            </Border>
-                                                                        </DataTemplate>
-                                                                    </ItemsControl.ItemTemplate>
-                                                                </ItemsControl>
-                                                            </DataTemplate>
-                                                        </ItemsControl.ItemTemplate>
-                                                    </ItemsControl>
-                                                </Border>
+                                                <Grid Margin="0,10,0,16"
+                                                      PointerPressed="OnBlockPointerPressed"
+                                                      ContextRequested="OnTableContextRequested">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <!-- 向上新增列 -->
+                                                    <Button Grid.Row="0" Grid.Column="1"
+                                                            Content="＋ 向上新增列"
+                                                            Classes="table-edge-btn"
+                                                            HorizontalAlignment="Center"
+                                                            Click="OnTableMenuInsertRowAbove"
+                                                            ToolTip.Tip="在目前儲存格上方新增一列" />
+
+                                                    <!-- 向左新增欄 -->
+                                                    <Button Grid.Row="1" Grid.Column="0"
+                                                            Content="＋&#x0a;左"
+                                                            Classes="table-edge-btn-v"
+                                                            VerticalAlignment="Center"
+                                                            Click="OnTableMenuInsertColumnLeft"
+                                                            ToolTip.Tip="在目前儲存格左側新增一欄" />
+
+                                                    <!-- 表格本體 -->
+                                                    <Border Grid.Row="1" Grid.Column="1"
+                                                            BorderBrush="#C5CDD8"
+                                                            BorderThickness="1"
+                                                            Background="White">
+                                                        <Border.ContextMenu>
+                                                            <ContextMenu Opening="OnTableContextMenuOpening">
+                                                                <MenuItem Header="↑ 向上新增列" Click="OnTableMenuInsertRowAbove" />
+                                                                <MenuItem Header="↓ 向下新增列" Click="OnTableMenuAddRowBelow" />
+                                                                <MenuItem Header="← 向左新增欄" Click="OnTableMenuInsertColumnLeft" />
+                                                                <MenuItem Header="→ 向右新增欄" Click="OnTableMenuAddColumnRight" />
+                                                                <Separator />
+                                                                <MenuItem Header="刪除列" Click="OnTableMenuDeleteRow" />
+                                                                <MenuItem Header="刪除欄" Click="OnTableMenuDeleteColumn" />
+                                                            </ContextMenu>
+                                                        </Border.ContextMenu>
+                                                        <ItemsControl ItemsSource="{Binding Rows}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate DataType="models:TableRowBlock">
+                                                                    <ItemsControl ItemsSource="{Binding Cells}">
+                                                                        <ItemsControl.ItemsPanel>
+                                                                            <ItemsPanelTemplate>
+                                                                                <!-- Rows=1 → auto columns from child count; updates when cells added -->
+                                                                                <UniformGrid Rows="1" />
+                                                                            </ItemsPanelTemplate>
+                                                                        </ItemsControl.ItemsPanel>
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate DataType="models:TableCellBlock">
+                                                                                <Border BorderBrush="#DCE2EA"
+                                                                                        BorderThickness="0.5"
+                                                                                        Padding="8,6"
+                                                                                        MinHeight="34"
+                                                                                        MinWidth="72"
+                                                                                        Background="White"
+                                                                                        PointerPressed="OnTableCellPointerPressed"
+                                                                                        ContextRequested="OnTableCellContextRequested">
+                                                                                    <Border.ContextMenu>
+                                                                                        <ContextMenu Opening="OnTableContextMenuOpening">
+                                                                                            <MenuItem Header="↑ 向上新增列" Click="OnTableMenuInsertRowAbove" />
+                                                                                            <MenuItem Header="↓ 向下新增列" Click="OnTableMenuAddRowBelow" />
+                                                                                            <MenuItem Header="← 向左新增欄" Click="OnTableMenuInsertColumnLeft" />
+                                                                                            <MenuItem Header="→ 向右新增欄" Click="OnTableMenuAddColumnRight" />
+                                                                                            <Separator />
+                                                                                            <MenuItem Header="刪除列" Click="OnTableMenuDeleteRow" />
+                                                                                            <MenuItem Header="刪除欄" Click="OnTableMenuDeleteColumn" />
+                                                                                        </ContextMenu>
+                                                                                    </Border.ContextMenu>
+                                                                                    <TextBox Text="{Binding Text, Mode=TwoWay}"
+                                                                                             FontSize="{Binding FontSize}"
+                                                                                             FontFamily="{Binding FontFamily, Converter={x:Static conv:EditorConverters.FontFamilyFromName}}"
+                                                                                             FontWeight="{Binding IsBold, Converter={x:Static conv:EditorConverters.FontWeightFromBool}}"
+                                                                                             FontStyle="{Binding IsItalic, Converter={x:Static conv:EditorConverters.FontStyleFromBool}}"
+                                                                                             TextAlignment="{Binding Alignment, Converter={x:Static conv:EditorConverters.AlignmentFromKind}}"
+                                                                                             BorderThickness="0"
+                                                                                             Background="Transparent"
+                                                                                             TextWrapping="Wrap"
+                                                                                             AcceptsReturn="True"
+                                                                                             MinHeight="24"
+                                                                                             Foreground="#1A2332"
+                                                                                             CaretBrush="#00A3E0"
+                                                                                             GotFocus="OnTableCellGotFocus"
+                                                                                             ContextRequested="OnTableCellContextRequested" />
+                                                                                </Border>
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </Border>
+
+                                                    <!-- 向右新增欄 -->
+                                                    <Button Grid.Row="1" Grid.Column="2"
+                                                            Content="＋&#x0a;右"
+                                                            Classes="table-edge-btn-v"
+                                                            VerticalAlignment="Center"
+                                                            Click="OnTableMenuAddColumnRight"
+                                                            ToolTip.Tip="在目前儲存格右側新增一欄" />
+
+                                                    <!-- 向下新增列 -->
+                                                    <Button Grid.Row="2" Grid.Column="1"
+                                                            Content="＋ 向下新增列"
+                                                            Classes="table-edge-btn"
+                                                            HorizontalAlignment="Center"
+                                                            Click="OnTableMenuAddRowBelow"
+                                                            ToolTip.Tip="在目前儲存格下方新增一列" />
+                                                </Grid>
                                             </DataTemplate>
 
                                             <DataTemplate DataType="models:ImageBlock">
                                                 <Border Margin="0,10,0,14"
-                                                        Padding="4"
+                                                        Padding="8"
                                                         Background="Transparent"
                                                         PointerPressed="OnImagePointerPressed"
-                                                        Cursor="Hand"
                                                         HorizontalAlignment="Left"
-                                                        MaxWidth="740">
+                                                        MaxWidth="760">
                                                     <StackPanel Spacing="4">
-                                                        <Border BorderBrush="#B3E5F5" BorderThickness="1" CornerRadius="3" Padding="2" Background="#FAFCFE">
-                                                            <Image Source="{Binding Preview}"
-                                                                   Width="{Binding DisplayWidth}"
-                                                                   Stretch="Uniform"
-                                                                   HorizontalAlignment="Left"
-                                                                   IsVisible="{Binding HasPreview}" />
-                                                        </Border>
+                                                        <!-- Frame + 8 resize handles -->
+                                                        <Grid HorizontalAlignment="Left" Margin="6">
+                                                            <Border BorderBrush="{Binding IsSelected, Converter={x:Static conv:EditorConverters.ImageSelectionBrush}}"
+                                                                    BorderThickness="1.5"
+                                                                    CornerRadius="2"
+                                                                    Background="#FAFCFE"
+                                                                    HorizontalAlignment="Left"
+                                                                    VerticalAlignment="Top">
+                                                                <Image Source="{Binding Preview}"
+                                                                       Width="{Binding DisplayWidth}"
+                                                                       Height="{Binding ResolvedHeight}"
+                                                                       Stretch="Fill"
+                                                                       HorizontalAlignment="Left"
+                                                                       IsVisible="{Binding HasPreview}" />
+                                                            </Border>
+
+                                                            <!-- Overlay: 8 handles when selected -->
+                                                            <Grid IsVisible="{Binding IsSelected}"
+                                                                  Width="{Binding DisplayWidth}"
+                                                                  Height="{Binding ResolvedHeight}"
+                                                                  HorizontalAlignment="Left"
+                                                                  VerticalAlignment="Top"
+                                                                  IsHitTestVisible="True">
+                                                                <Border Tag="nw" Width="12" Height="12" Classes="img-handle"
+                                                                        HorizontalAlignment="Left" VerticalAlignment="Top"
+                                                                        Margin="-6,-6,0,0" Cursor="TopLeftCorner"
+                                                                        PointerPressed="OnImageResizeHandlePressed"
+                                                                        PointerMoved="OnImageResizeHandleMoved"
+                                                                        PointerReleased="OnImageResizeHandleReleased"
+                                                                        PointerCaptureLost="OnImageResizeHandleCaptureLost" />
+                                                                <Border Tag="n" Width="12" Height="12" Classes="img-handle"
+                                                                        HorizontalAlignment="Center" VerticalAlignment="Top"
+                                                                        Margin="0,-6,0,0" Cursor="TopSide"
+                                                                        PointerPressed="OnImageResizeHandlePressed"
+                                                                        PointerMoved="OnImageResizeHandleMoved"
+                                                                        PointerReleased="OnImageResizeHandleReleased"
+                                                                        PointerCaptureLost="OnImageResizeHandleCaptureLost" />
+                                                                <Border Tag="ne" Width="12" Height="12" Classes="img-handle"
+                                                                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                                        Margin="0,-6,-6,0" Cursor="TopRightCorner"
+                                                                        PointerPressed="OnImageResizeHandlePressed"
+                                                                        PointerMoved="OnImageResizeHandleMoved"
+                                                                        PointerReleased="OnImageResizeHandleReleased"
+                                                                        PointerCaptureLost="OnImageResizeHandleCaptureLost" />
+                                                                <Border Tag="w" Width="12" Height="12" Classes="img-handle"
+                                                                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                                        Margin="-6,0,0,0" Cursor="LeftSide"
+                                                                        PointerPressed="OnImageResizeHandlePressed"
+                                                                        PointerMoved="OnImageResizeHandleMoved"
+                                                                        PointerReleased="OnImageResizeHandleReleased"
+                                                                        PointerCaptureLost="OnImageResizeHandleCaptureLost" />
+                                                                <Border Tag="e" Width="12" Height="12" Classes="img-handle"
+                                                                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                                        Margin="0,0,-6,0" Cursor="RightSide"
+                                                                        PointerPressed="OnImageResizeHandlePressed"
+                                                                        PointerMoved="OnImageResizeHandleMoved"
+                                                                        PointerReleased="OnImageResizeHandleReleased"
+                                                                        PointerCaptureLost="OnImageResizeHandleCaptureLost" />
+                                                                <Border Tag="sw" Width="12" Height="12" Classes="img-handle"
+                                                                        HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                                                                        Margin="-6,0,0,-6" Cursor="BottomLeftCorner"
+                                                                        PointerPressed="OnImageResizeHandlePressed"
+                                                                        PointerMoved="OnImageResizeHandleMoved"
+                                                                        PointerReleased="OnImageResizeHandleReleased"
+                                                                        PointerCaptureLost="OnImageResizeHandleCaptureLost" />
+                                                                <Border Tag="s" Width="12" Height="12" Classes="img-handle"
+                                                                        HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                                                        Margin="0,0,0,-6" Cursor="BottomSide"
+                                                                        PointerPressed="OnImageResizeHandlePressed"
+                                                                        PointerMoved="OnImageResizeHandleMoved"
+                                                                        PointerReleased="OnImageResizeHandleReleased"
+                                                                        PointerCaptureLost="OnImageResizeHandleCaptureLost" />
+                                                                <Border Tag="se" Width="12" Height="12" Classes="img-handle"
+                                                                        HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                                                        Margin="0,0,-6,-6" Cursor="BottomRightCorner"
+                                                                        PointerPressed="OnImageResizeHandlePressed"
+                                                                        PointerMoved="OnImageResizeHandleMoved"
+                                                                        PointerReleased="OnImageResizeHandleReleased"
+                                                                        PointerCaptureLost="OnImageResizeHandleCaptureLost" />
+                                                            </Grid>
+                                                        </Grid>
+
                                                         <Border IsVisible="{Binding IsDecodeFailed}"
                                                                 Background="#FFF8E6"
                                                                 Padding="12,8"
