@@ -18,7 +18,7 @@ public partial class MainViewModel : ViewModelBase
 {
     public const int AutoSaveIntervalSeconds = 60;
 
-    private readonly DocxDocumentService _documentService = new();
+    private readonly DocumentFormatService _documentService = new();
     private readonly Stack<string> _undoStack = new();
     private readonly Stack<string> _redoStack = new();
     private readonly DispatcherTimer _autoSaveTimer;
@@ -787,9 +787,9 @@ public partial class MainViewModel : ViewModelBase
         {
             var files = await window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
             {
-                Title = "開啟 Word 文件",
+                Title = "開啟文件",
                 AllowMultiple = false,
-                FileTypeFilter = [DocxFileType(), AllFileType()],
+                FileTypeFilter = [DocumentFileType(), DocxFileType(), DocFileType(), OdtFileType(), AllFileType()],
             });
             if (files.Count == 0)
             {
@@ -888,7 +888,7 @@ public partial class MainViewModel : ViewModelBase
             Title = "另存新檔",
             SuggestedFileName = FileName ?? "未命名文件.docx",
             DefaultExtension = "docx",
-            FileTypeChoices = [DocxFileType()],
+            FileTypeChoices = [DocxFileType(), DocFileType(), OdtFileType()],
         });
         if (file is null)
             return;
@@ -900,8 +900,15 @@ public partial class MainViewModel : ViewModelBase
             return;
         }
 
-        if (!path.EndsWith(".docx", StringComparison.OrdinalIgnoreCase))
-            path += ".docx";
+        try
+        {
+            path = DocumentFormatService.NormalizeSavePath(path);
+        }
+        catch (Exception ex)
+        {
+            StatusText = ex.Message;
+            return;
+        }
 
         await SaveToPathAsync(path, isAutoSave: false);
     }
@@ -1904,11 +1911,42 @@ public partial class MainViewModel : ViewModelBase
         return window?.Clipboard;
     }
 
-    private static FilePickerFileType DocxFileType() => new("Word 文件")
+    private static FilePickerFileType DocumentFileType() => new("文件")
+    {
+        Patterns = ["*.docx", "*.doc", "*.odt"],
+        AppleUniformTypeIdentifiers =
+        [
+            "org.openxmlformats.wordprocessingml.document",
+            "com.microsoft.word.doc",
+            "org.oasis-open.opendocument.text",
+        ],
+        MimeTypes =
+        [
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/msword",
+            "application/vnd.oasis.opendocument.text",
+        ],
+    };
+
+    private static FilePickerFileType DocxFileType() => new("Word 文件 (*.docx)")
     {
         Patterns = ["*.docx"],
         AppleUniformTypeIdentifiers = ["org.openxmlformats.wordprocessingml.document"],
         MimeTypes = ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+    };
+
+    private static FilePickerFileType DocFileType() => new("Word 97-2003 (*.doc)")
+    {
+        Patterns = ["*.doc"],
+        AppleUniformTypeIdentifiers = ["com.microsoft.word.doc"],
+        MimeTypes = ["application/msword"],
+    };
+
+    private static FilePickerFileType OdtFileType() => new("OpenDocument (*.odt)")
+    {
+        Patterns = ["*.odt"],
+        AppleUniformTypeIdentifiers = ["org.oasis-open.opendocument.text"],
+        MimeTypes = ["application/vnd.oasis.opendocument.text"],
     };
 
     private static FilePickerFileType AllFileType() => new("所有檔案") { Patterns = ["*.*"] };

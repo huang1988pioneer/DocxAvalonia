@@ -1,6 +1,6 @@
 ﻿# DocxAvalonia
 
-以 **Avalonia UI** 打造的 `.docx` 編輯／預覽桌面程式，可切換 **六種介面風格**：Microsoft Word、LibreOffice Writer、Google 文件、Zoho Writer、WPS Writer、FreeOffice TextMaker。
+以 **Avalonia UI** 打造的文件編輯／預覽桌面程式，支援 **`.docx` / `.doc` / `.odt` 讀寫**，可切換 **六種介面風格**：Microsoft Word、LibreOffice Writer、Google 文件、Zoho Writer、WPS Writer、FreeOffice TextMaker。
 
 ## 下載
 
@@ -31,7 +31,8 @@ dotnet run -c Release
 
 ### 檔案
 - 新增、開啟、儲存、另存新檔
-- 拖放 `.docx` 開啟
+- 格式：**`.docx`**（原生 OOXML）、**`.odt`**（OpenDocument 讀寫）、**`.doc`**（可讀 Word 97-2003 二進位；另存為 Word 可開的 RTF 相容 `.doc`，本程式可完整往返）
+- 拖放 `.docx` / `.doc` / `.odt` 開啟
 - 命令列傳入路徑開啟
 - **自動儲存**（可開關，每 60 秒；需已有儲存路徑）
 
@@ -91,7 +92,7 @@ dotnet run -c Release
 | 項目 | 說明 |
 |------|------|
 | UI | Avalonia 11 + Fluent + MVVM |
-| 文件 | DocumentFormat.OpenXml 讀寫 `.docx` |
+| 文件 | DocumentFormat.OpenXml（`.docx`）、自研 ODT、DocSharp（`.doc`↔DOCX/RTF） |
 | 編輯模型 | 段落／表格／圖片區塊（段落級格式） |
 
 > 此為精簡本機編輯器，外觀可仿 Word／LibreOffice／Google 文件／Zoho／WPS／FreeOffice，**非**完整商業引擎；無雲端協作、留言、追蹤修訂等。

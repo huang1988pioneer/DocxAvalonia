@@ -56,8 +56,8 @@ public partial class MainWindow : Window
             return false;
         var files = e.Data.GetFiles();
         return files?.Any(f =>
-            f.Name.EndsWith(".docx", System.StringComparison.OrdinalIgnoreCase)
-            || (f.TryGetLocalPath()?.EndsWith(".docx", System.StringComparison.OrdinalIgnoreCase) ?? false)) == true;
+            IsSupportedDocumentName(f.Name)
+            || IsSupportedDocumentPath(f.TryGetLocalPath())) == true;
     }
 
     private static string? TryGetDocxPath(DragEventArgs e)
@@ -69,13 +69,21 @@ public partial class MainWindow : Window
         foreach (var item in files)
         {
             var local = item.TryGetLocalPath();
-            if (!string.IsNullOrWhiteSpace(local)
-                && local.EndsWith(".docx", System.StringComparison.OrdinalIgnoreCase))
+            if (IsSupportedDocumentPath(local))
                 return local;
         }
 
         return null;
     }
+
+    private static bool IsSupportedDocumentName(string? name) =>
+        !string.IsNullOrWhiteSpace(name)
+        && (name.EndsWith(".docx", System.StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".doc", System.StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".odt", System.StringComparison.OrdinalIgnoreCase));
+
+    private static bool IsSupportedDocumentPath(string? path) =>
+        DocxAvalonia.Services.DocumentFormatService.IsSupportedPath(path);
 
     private void OnEditorGotFocus(object? sender, GotFocusEventArgs e)
     {

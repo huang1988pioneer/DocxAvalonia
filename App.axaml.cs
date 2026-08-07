@@ -22,7 +22,7 @@ public partial class App : Application
             var args = desktop.Args ?? Array.Empty<string>();
             var initialPath = args.FirstOrDefault(a =>
                 !string.IsNullOrWhiteSpace(a)
-                && a.EndsWith(".docx", StringComparison.OrdinalIgnoreCase));
+                && Services.DocumentFormatService.IsSupportedPath(a));
 
             var vm = new MainViewModel();
             desktop.MainWindow = new MainWindow
@@ -30,7 +30,7 @@ public partial class App : Application
                 DataContext = vm,
             };
 
-            // 支援：DocxAvalonia.exe "C:\path\file.docx"
+            // 支援：DocxAvalonia.exe "C:\path\file.docx|doc|odt"
             if (initialPath is not null)
             {
                 desktop.MainWindow.Opened += async (_, _) =>
