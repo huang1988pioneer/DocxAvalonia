@@ -1,0 +1,1040 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:DocxAvalonia.ViewModels"
+        xmlns:models="using:DocxAvalonia.Models"
+        xmlns:conv="using:DocxAvalonia.Converters"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="820"
+        x:Class="DocxAvalonia.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="{Binding WindowTitle}"
+        Width="1280"
+        Height="820"
+        MinWidth="900"
+        MinHeight="580"
+        DragDrop.AllowDrop="True"
+        Background="#ECEFF3">
+
+    <Design.DataContext>
+        <vm:MainViewModel />
+    </Design.DataContext>
+
+    <Window.KeyBindings>
+        <!-- Windows / Linux -->
+        <KeyBinding Gesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
+        <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenDocumentCommand}" />
+        <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveDocumentCommand}" />
+        <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveDocumentAsCommand}" />
+        <KeyBinding Gesture="Ctrl+B" Command="{Binding ToggleBoldCommand}" />
+        <KeyBinding Gesture="Ctrl+I" Command="{Binding ToggleItalicCommand}" />
+        <KeyBinding Gesture="Ctrl+U" Command="{Binding ToggleUnderlineCommand}" />
+        <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+        <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
+        <KeyBinding Gesture="Ctrl+F" Command="{Binding ToggleFindPanelCommand}" />
+        <KeyBinding Gesture="Ctrl+Enter" Command="{Binding InsertParagraphCommand}" />
+        <!-- macOS Command key -->
+        <KeyBinding Gesture="Meta+N" Command="{Binding NewDocumentCommand}" />
+        <KeyBinding Gesture="Meta+O" Command="{Binding OpenDocumentCommand}" />
+        <KeyBinding Gesture="Meta+S" Command="{Binding SaveDocumentCommand}" />
+        <KeyBinding Gesture="Meta+Shift+S" Command="{Binding SaveDocumentAsCommand}" />
+        <KeyBinding Gesture="Meta+B" Command="{Binding ToggleBoldCommand}" />
+        <KeyBinding Gesture="Meta+I" Command="{Binding ToggleItalicCommand}" />
+        <KeyBinding Gesture="Meta+U" Command="{Binding ToggleUnderlineCommand}" />
+        <KeyBinding Gesture="Meta+Z" Command="{Binding UndoCommand}" />
+        <KeyBinding Gesture="Meta+Shift+Z" Command="{Binding RedoCommand}" />
+        <KeyBinding Gesture="Meta+Y" Command="{Binding RedoCommand}" />
+        <KeyBinding Gesture="Meta+F" Command="{Binding ToggleFindPanelCommand}" />
+        <KeyBinding Gesture="Meta+Enter" Command="{Binding InsertParagraphCommand}" />
+    </Window.KeyBindings>
+
+    <!-- macOS menu bar: File -->
+    <NativeMenu.Menu>
+        <NativeMenu>
+            <NativeMenuItem Header="檔案">
+                <NativeMenuItem.Menu>
+                    <NativeMenu>
+                        <NativeMenuItem Header="新建" Gesture="Meta+N" Command="{Binding NewDocumentCommand}" />
+                        <NativeMenuItem Header="開啟…" Gesture="Meta+O" Command="{Binding OpenDocumentCommand}" />
+                        <NativeMenuItemSeparator />
+                        <NativeMenuItem Header="儲存" Gesture="Meta+S" Command="{Binding SaveDocumentCommand}" />
+                        <NativeMenuItem Header="另存新檔…" Gesture="Meta+Shift+S" Command="{Binding SaveDocumentAsCommand}" />
+                    </NativeMenu>
+                </NativeMenuItem.Menu>
+            </NativeMenuItem>
+            <NativeMenuItem Header="編輯">
+                <NativeMenuItem.Menu>
+                    <NativeMenu>
+                        <NativeMenuItem Header="復原" Gesture="Meta+Z" Command="{Binding UndoCommand}" />
+                        <NativeMenuItem Header="重做" Gesture="Meta+Shift+Z" Command="{Binding RedoCommand}" />
+                        <NativeMenuItemSeparator />
+                        <NativeMenuItem Header="剪下" Command="{Binding CutCommand}" />
+                        <NativeMenuItem Header="複製" Command="{Binding CopyCommand}" />
+                        <NativeMenuItem Header="貼上" Command="{Binding PasteCommand}" />
+                        <NativeMenuItemSeparator />
+                        <NativeMenuItem Header="尋找／取代" Gesture="Meta+F" Command="{Binding ToggleFindPanelCommand}" />
+                    </NativeMenu>
+                </NativeMenuItem.Menu>
+            </NativeMenuItem>
+        </NativeMenu>
+    </NativeMenu.Menu>
+
+    <DockPanel>
+        <!-- ═══ Theme chrome (Word / LO / Docs / Zoho / WPS / FreeOffice) ═══ -->
+        <Border DockPanel.Dock="Top" Background="White" BorderBrush="#D5DBE3" BorderThickness="0,0,0,1">
+            <StackPanel>
+                <!-- Always-visible theme switcher -->
+                <Border Background="#F0F2F5" BorderBrush="#D5DBE3" BorderThickness="0,0,0,1" Padding="10,4">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <TextBlock Text="介面風格"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       Foreground="#5A6A7A"
+                                       VerticalAlignment="Center" />
+                            <ComboBox Width="180"
+                                      ItemsSource="{Binding UiThemeOptions}"
+                                      SelectedItem="{Binding UiTheme}"
+                                      FontSize="12"
+                                      VerticalAlignment="Center"
+                                      ToolTip.Tip="切換 Microsoft Word / LibreOffice / Google 文件 / Zoho / WPS / FreeOffice 介面">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={x:Static conv:EditorConverters.UiThemeLabel}}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock Text="{Binding ThemeStatusHint}"
+                                       FontSize="11"
+                                       Foreground="#8A96A3"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                            <Button Content="導覽" Command="{Binding ToggleNavigatorCommand}" Classes="zoho-tbtn-mini" ToolTip.Tip="左側文件導覽" />
+                            <Button Content="屬性" Command="{Binding ToggleSidebarCommand}" Classes="zoho-tbtn-mini" ToolTip.Tip="右側屬性" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ── Microsoft Word header ── -->
+                <Border IsVisible="{Binding UiTheme, Converter={x:Static conv:EditorConverters.IsUiTheme}, ConverterParameter=Word}"
+                        Background="#2B579A" Padding="12,8">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <TextBlock Text="W" FontSize="18" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" />
+                            <StackPanel Spacing="0">
+                                <TextBlock Text="Microsoft Word" FontSize="11" Foreground="#B8D0F0" />
+                                <TextBlock Text="{Binding DocumentTitleDisplay}" FontSize="15" FontWeight="SemiBold" Foreground="White" TextTrimming="CharacterEllipsis" MaxWidth="420" />
+                            </StackPanel>
+                            <Border Background="#1F4A86" CornerRadius="4" Padding="8,4" Margin="12,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding SaveStatusDisplay}" FontSize="11" Foreground="#D6E4F5" />
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                            <Button Content="新建" Command="{Binding NewDocumentCommand}" Classes="word-qa" />
+                            <Button Content="開啟" Command="{Binding OpenDocumentCommand}" Classes="word-qa" />
+                            <Button Content="儲存" Command="{Binding SaveDocumentCommand}" Classes="word-qa" />
+                            <Button Content="另存" Command="{Binding SaveDocumentAsCommand}" Classes="word-qa" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ── LibreOffice Writer header ── -->
+                <Border IsVisible="{Binding UiTheme, Converter={x:Static conv:EditorConverters.IsUiTheme}, ConverterParameter=LibreOffice}"
+                        Background="#F0F0F0" BorderBrush="#C0C0C0" BorderThickness="0,0,0,1" Padding="8,6">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Border Width="28" Height="28" Background="#18A303" CornerRadius="4">
+                                <TextBlock Text="L" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="LibreOffice Writer" FontWeight="SemiBold" FontSize="14" Foreground="#1A1A1A" VerticalAlignment="Center" />
+                            <TextBlock Text="—" Foreground="#888" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding DocumentTitleDisplay}" FontSize="13" Foreground="#333" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="360" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                            <Button Content="新建" Command="{Binding NewDocumentCommand}" Classes="lo-btn" />
+                            <Button Content="開啟" Command="{Binding OpenDocumentCommand}" Classes="lo-btn" />
+                            <Button Content="儲存" Command="{Binding SaveDocumentCommand}" Classes="lo-btn" />
+                            <Button Content="屬性" Command="{Binding ToggleSidebarCommand}" Classes="lo-btn" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ── Google Docs header ── -->
+                <Border IsVisible="{Binding UiTheme, Converter={x:Static conv:EditorConverters.IsUiTheme}, ConverterParameter=GoogleDocs}"
+                        Background="White" Padding="12,10,16,6">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                            <Border Width="36" Height="36" Background="#1A73E8" CornerRadius="4">
+                                <TextBlock Text="文" Foreground="White" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="{Binding DocumentTitleDisplay}"
+                                           FontSize="18"
+                                           FontWeight="Normal"
+                                           TextTrimming="CharacterEllipsis"
+                                           MaxWidth="420" />
+                                <TextBlock Text="{Binding SaveStatusDisplay}" FontSize="11" Foreground="#5F6368" />
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Button Content="開啟" Command="{Binding OpenDocumentCommand}" Classes="gdocs-ghost" />
+                            <Button Content="儲存" Command="{Binding SaveDocumentCommand}" Classes="gdocs-primary" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ── Zoho Writer header ── -->
+                <Grid IsVisible="{Binding UiTheme, Converter={x:Static conv:EditorConverters.IsUiTheme}, ConverterParameter=Zoho}"
+                      ColumnDefinitions="Auto,*,Auto" Margin="10,8,12,4">
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <Border Classes="zoho-logo" ToolTip.Tip="DocxAvalonia · Zoho Writer 風格">
+                            <TextBlock Text="Z" Classes="zoho-logo-letter" />
+                        </Border>
+                        <StackPanel Spacing="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding ThemeBrandText}"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       Foreground="#00A3E0"
+                                       LetterSpacing="0.5" />
+                            <TextBlock Text="{Binding DocumentTitleDisplay}"
+                                       FontSize="16"
+                                       FontWeight="SemiBold"
+                                       Foreground="#1A2332"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxWidth="360" />
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                Spacing="8"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Margin="12,0">
+                        <Border Classes="zoho-status-pill">
+                            <TextBlock Text="{Binding SaveStatusDisplay}" FontSize="12" Foreground="#3D4F63" />
+                        </Border>
+                        <TextBlock Text="{Binding AutoSaveStatusText}" FontSize="11" Foreground="#7A8899" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <Button Content="新建" Command="{Binding NewDocumentCommand}" Classes="zoho-ghost" ToolTip.Tip="新建文件" />
+                        <Button Content="開啟" Command="{Binding OpenDocumentCommand}" Classes="zoho-ghost" ToolTip.Tip="開啟 .docx（⌘O）" />
+                        <Button Content="另存" Command="{Binding SaveDocumentAsCommand}" Classes="zoho-ghost" ToolTip.Tip="另存新檔" />
+                        <Button Content="儲存" Command="{Binding SaveDocumentCommand}" Classes="zoho-primary" ToolTip.Tip="儲存（⌘S）" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- ── WPS Writer header ── -->
+                <Border IsVisible="{Binding UiTheme, Converter={x:Static conv:EditorConverters.IsUiTheme}, ConverterParameter=Wps}"
+                        Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="10,8">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <Border Width="32" Height="32" CornerRadius="6" Background="#E81123">
+                                <TextBlock Text="W" Foreground="White" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel>
+                                <TextBlock Text="WPS Writer" FontSize="11" Foreground="#E81123" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding DocumentTitleDisplay}" FontSize="15" FontWeight="SemiBold" Foreground="#222" TextTrimming="CharacterEllipsis" MaxWidth="360" />
+                            </StackPanel>
+                        </StackPanel>
+                        <Border Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Background="#FFF0F0" CornerRadius="12" Padding="12,4">
+                            <TextBlock Text="{Binding SaveStatusDisplay}" FontSize="12" Foreground="#C41E3A" />
+                        </Border>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
+                            <Button Content="新建" Command="{Binding NewDocumentCommand}" Classes="wps-ghost" />
+                            <Button Content="開啟" Command="{Binding OpenDocumentCommand}" Classes="wps-ghost" />
+                            <Button Content="儲存" Command="{Binding SaveDocumentCommand}" Classes="wps-primary" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ── FreeOffice TextMaker header ── -->
+                <Border IsVisible="{Binding UiTheme, Converter={x:Static conv:EditorConverters.IsUiTheme}, ConverterParameter=FreeOffice}"
+                        Background="#E8E4DC" BorderBrush="#C8C0B0" BorderThickness="0,0,0,1" Padding="10,7">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Border Width="28" Height="28" Background="#E36C0A" CornerRadius="2">
+                                <TextBlock Text="T" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="FreeOffice TextMaker" FontWeight="SemiBold" FontSize="14" Foreground="#3A3020" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding DocumentTitleDisplay}" FontSize="12" Foreground="#5A5040" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" MaxWidth="300" />
+                            <TextBlock Text="{Binding SaveStatusDisplay}" FontSize="11" Foreground="#8A7050" VerticalAlignment="Center" Margin="12,0,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                            <Button Content="新建" Command="{Binding NewDocumentCommand}" Classes="fo-btn" />
+                            <Button Content="開啟" Command="{Binding OpenDocumentCommand}" Classes="fo-btn" />
+                            <Button Content="儲存" Command="{Binding SaveDocumentCommand}" Classes="fo-btn" />
+                            <Button Content="另存" Command="{Binding SaveDocumentAsCommand}" Classes="fo-btn" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Ribbon tabs (all themes share functional ribbon) -->
+                <Border BorderBrush="#E4E8EE" BorderThickness="0,1,0,0" Padding="8,0,8,0" Background="#FAFBFC">
+                    <StackPanel Orientation="Horizontal" Spacing="0">
+                        <Button Content="首頁"
+                                Classes="zoho-tab"
+                                Classes.active="{Binding RibbonTab, Converter={x:Static conv:EditorConverters.IsRibbonTab}, ConverterParameter=Home}"
+                                Command="{Binding SelectRibbonTabCommand}" CommandParameter="Home" />
+                        <Button Content="插入"
+                                Classes="zoho-tab"
+                                Classes.active="{Binding RibbonTab, Converter={x:Static conv:EditorConverters.IsRibbonTab}, ConverterParameter=Insert}"
+                                Command="{Binding SelectRibbonTabCommand}" CommandParameter="Insert" />
+                        <Button Content="格式"
+                                Classes="zoho-tab"
+                                Classes.active="{Binding RibbonTab, Converter={x:Static conv:EditorConverters.IsRibbonTab}, ConverterParameter=Format}"
+                                Command="{Binding SelectRibbonTabCommand}" CommandParameter="Format" />
+                        <Button Content="工具"
+                                Classes="zoho-tab"
+                                Classes.active="{Binding RibbonTab, Converter={x:Static conv:EditorConverters.IsRibbonTab}, ConverterParameter=Tools}"
+                                Command="{Binding SelectRibbonTabCommand}" CommandParameter="Tools" />
+                        <Button Content="校閱"
+                                Classes="zoho-tab"
+                                Classes.active="{Binding RibbonTab, Converter={x:Static conv:EditorConverters.IsRibbonTab}, ConverterParameter=Review}"
+                                Command="{Binding SelectRibbonTabCommand}" CommandParameter="Review" />
+                        <Button Content="檢視"
+                                Classes="zoho-tab"
+                                Classes.active="{Binding RibbonTab, Converter={x:Static conv:EditorConverters.IsRibbonTab}, ConverterParameter=View}"
+                                Command="{Binding SelectRibbonTabCommand}" CommandParameter="View" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Home ── -->
+                <Border IsVisible="{Binding RibbonTab, Converter={x:Static conv:EditorConverters.IsRibbonTab}, ConverterParameter=Home}"
+                        Classes="zoho-ribbon-body">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                        <StackPanel Orientation="Horizontal" Spacing="0" Margin="4,2">
+                            <Border Classes="zoho-group">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="新建" Command="{Binding NewDocumentCommand}" Classes="zoho-tbtn" ToolTip.Tip="新建文件（⌘N）" />
+                                        <Button Content="開啟…" Command="{Binding OpenDocumentCommand}" Classes="zoho-tbtn" ToolTip.Tip="開啟 Word 文件（⌘O）" />
+                                        <Button Content="儲存" Command="{Binding SaveDocumentCommand}" Classes="zoho-tbtn" ToolTip.Tip="儲存（⌘S）" />
+                                        <Button Content="另存" Command="{Binding SaveDocumentAsCommand}" Classes="zoho-tbtn" ToolTip.Tip="另存新檔（⌘⇧S）" />
+                                    </StackPanel>
+                                    <TextBlock Text="檔案" Classes="zoho-group-label" />
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="zoho-vsep" />
+                            <Border Classes="zoho-group">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="剪下" Command="{Binding CutCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="複製" Command="{Binding CopyCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="貼上" Command="{Binding PasteCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="復原" Command="{Binding UndoCommand}" Classes="zoho-tbtn" ToolTip.Tip="Ctrl+Z" />
+                                        <Button Content="重做" Command="{Binding RedoCommand}" Classes="zoho-tbtn" ToolTip.Tip="Ctrl+Y" />
+                                    </StackPanel>
+                                    <TextBlock Text="剪貼簿" Classes="zoho-group-label" />
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="zoho-vsep" />
+                            <Border Classes="zoho-group">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <ComboBox Width="138" ItemsSource="{Binding FontFamilyOptions}"
+                                                  SelectedItem="{Binding ActiveFontFamily, Mode=TwoWay}" VerticalAlignment="Center" />
+                                        <ComboBox Width="58" ItemsSource="{Binding FontSizeOptions}"
+                                                  SelectedItem="{Binding ActiveFontSize, Mode=TwoWay}" VerticalAlignment="Center" />
+                                        <Button Content="A−" Command="{Binding DecreaseFontSizeCommand}" Classes="zoho-tbtn" Width="34" />
+                                        <Button Content="A+" Command="{Binding IncreaseFontSizeCommand}" Classes="zoho-tbtn" Width="34" />
+                                        <Button Content="B" FontWeight="Bold" Command="{Binding ToggleBoldCommand}" Classes="zoho-tbtn" Width="32" ToolTip.Tip="Ctrl+B" />
+                                        <Button Content="I" FontStyle="Italic" Command="{Binding ToggleItalicCommand}" Classes="zoho-tbtn" Width="32" ToolTip.Tip="Ctrl+I" />
+                                        <Button Content="U" Command="{Binding ToggleUnderlineCommand}" Classes="zoho-tbtn" Width="32" ToolTip.Tip="Ctrl+U" />
+                                    </StackPanel>
+                                    <TextBlock Text="字型" Classes="zoho-group-label" />
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="zoho-vsep" />
+                            <Border Classes="zoho-group">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="左" Command="{Binding SetAlignmentCommand}" CommandParameter="Left" Classes="zoho-tbtn" Width="32" />
+                                        <Button Content="中" Command="{Binding SetAlignmentCommand}" CommandParameter="Center" Classes="zoho-tbtn" Width="32" />
+                                        <Button Content="右" Command="{Binding SetAlignmentCommand}" CommandParameter="Right" Classes="zoho-tbtn" Width="32" />
+                                        <Button Content="齊" Command="{Binding SetAlignmentCommand}" CommandParameter="Justify" Classes="zoho-tbtn" Width="32" />
+                                        <Button Content="• 清單" Command="{Binding ToggleBulletListCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="1. 編號" Command="{Binding ToggleNumberedListCommand}" Classes="zoho-tbtn" />
+                                    </StackPanel>
+                                    <TextBlock Text="段落" Classes="zoho-group-label" />
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="zoho-vsep" />
+                            <Border Classes="zoho-group">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="一般" Command="{Binding SetStyleCommand}" CommandParameter="Normal" Classes="zoho-tbtn" />
+                                        <Button Content="標題1" Command="{Binding SetStyleCommand}" CommandParameter="Heading1" Classes="zoho-tbtn" FontWeight="Bold" />
+                                        <Button Content="標題2" Command="{Binding SetStyleCommand}" CommandParameter="Heading2" Classes="zoho-tbtn" FontWeight="SemiBold" />
+                                        <Button Content="標題3" Command="{Binding SetStyleCommand}" CommandParameter="Heading3" Classes="zoho-tbtn" />
+                                    </StackPanel>
+                                    <TextBlock Text="樣式" Classes="zoho-group-label" />
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="zoho-vsep" />
+                            <Border Classes="zoho-group">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="↑ 列" Command="{Binding TableInsertRowAboveCommand}" Classes="zoho-tbtn" ToolTip.Tip="在選取儲存格上方新增一列" />
+                                        <Button Content="↓ 列" Command="{Binding TableAddRowBelowCommand}" Classes="zoho-tbtn" ToolTip.Tip="在選取儲存格下方新增一列" />
+                                        <Button Content="← 欄" Command="{Binding TableInsertColumnLeftCommand}" Classes="zoho-tbtn" ToolTip.Tip="在選取儲存格左側新增一欄" />
+                                        <Button Content="→ 欄" Command="{Binding TableAddColumnRightCommand}" Classes="zoho-tbtn" ToolTip.Tip="在選取儲存格右側新增一欄" />
+                                        <Button Content="刪列" Command="{Binding TableDeleteRowCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="刪欄" Command="{Binding TableDeleteColumnCommand}" Classes="zoho-tbtn" />
+                                    </StackPanel>
+                                    <TextBlock Text="表格儲存格" Classes="zoho-group-label" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+
+                <!-- ── Insert ── -->
+                <Border IsVisible="{Binding RibbonTab, Converter={x:Static conv:EditorConverters.IsRibbonTab}, ConverterParameter=Insert}"
+                        Classes="zoho-ribbon-body">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                        <StackPanel Orientation="Horizontal" Spacing="0" Margin="4,2">
+                            <Border Classes="zoho-group">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="段落" Command="{Binding InsertParagraphCommand}" Classes="zoho-tbtn" ToolTip.Tip="Ctrl+Enter" />
+                                        <Button Content="標題" Command="{Binding InsertHeadingCommand}" Classes="zoho-tbtn" />
+                                    </StackPanel>
+                                    <TextBlock Text="文字" Classes="zoho-group-label" />
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="zoho-vsep" />
+                            <Border Classes="zoho-group">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="表格" Command="{Binding InsertTableCommand}" Classes="zoho-tbtn" ToolTip.Tip="插入 3×3 表格" />
+                                        <Button Content="圖片" Command="{Binding InsertImageCommand}" Classes="zoho-tbtn" />
+                                    </StackPanel>
+                                    <TextBlock Text="物件" Classes="zoho-group-label" />
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="zoho-vsep" />
+                            <Border Classes="zoho-group">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="↑ 列" Command="{Binding TableInsertRowAboveCommand}" Classes="zoho-tbtn" ToolTip.Tip="向上新增列" />
+                                        <Button Content="↓ 列" Command="{Binding TableAddRowBelowCommand}" Classes="zoho-tbtn" ToolTip.Tip="向下新增列" />
+                                        <Button Content="← 欄" Command="{Binding TableInsertColumnLeftCommand}" Classes="zoho-tbtn" ToolTip.Tip="向左新增欄" />
+                                        <Button Content="→ 欄" Command="{Binding TableAddColumnRightCommand}" Classes="zoho-tbtn" ToolTip.Tip="向右新增欄" />
+                                        <Button Content="刪列" Command="{Binding TableDeleteRowCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="刪欄" Command="{Binding TableDeleteColumnCommand}" Classes="zoho-tbtn" />
+                                    </StackPanel>
+                                    <TextBlock Text="表格編輯（先點選儲存格）" Classes="zoho-group-label" />
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="zoho-vsep" />
+                            <Border Classes="zoho-group">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="↖" Command="{Binding ImageStretchCommand}" CommandParameter="nw" Classes="zoho-tbtn" Width="32" ToolTip.Tip="左上拉伸" />
+                                        <Button Content="↑" Command="{Binding ImageStretchCommand}" CommandParameter="n" Classes="zoho-tbtn" Width="32" ToolTip.Tip="向上拉伸" />
+                                        <Button Content="↗" Command="{Binding ImageStretchCommand}" CommandParameter="ne" Classes="zoho-tbtn" Width="32" ToolTip.Tip="右上拉伸" />
+                                        <Button Content="←" Command="{Binding ImageStretchCommand}" CommandParameter="w" Classes="zoho-tbtn" Width="32" ToolTip.Tip="向左拉伸" />
+                                        <Button Content="→" Command="{Binding ImageStretchCommand}" CommandParameter="e" Classes="zoho-tbtn" Width="32" ToolTip.Tip="向右拉伸" />
+                                        <Button Content="↙" Command="{Binding ImageStretchCommand}" CommandParameter="sw" Classes="zoho-tbtn" Width="32" ToolTip.Tip="左下拉伸" />
+                                        <Button Content="↓" Command="{Binding ImageStretchCommand}" CommandParameter="s" Classes="zoho-tbtn" Width="32" ToolTip.Tip="向下拉伸" />
+                                        <Button Content="↘" Command="{Binding ImageStretchCommand}" CommandParameter="se" Classes="zoho-tbtn" Width="32" ToolTip.Tip="右下拉伸" />
+                                        <Button Content="放大" Command="{Binding ImageEnlargeCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="縮小" Command="{Binding ImageShrinkCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="重設" Command="{Binding ImageResetSizeCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="頁寬" Command="{Binding ImageFitPageCommand}" Classes="zoho-tbtn" />
+                                        <TextBlock Text="{Binding ImageSizeText}" VerticalAlignment="Center" FontSize="11" Foreground="#5A6A7A" Margin="6,0,0,0" MinWidth="80" />
+                                    </StackPanel>
+                                    <TextBlock Text="圖片拉伸（或拖曳圖片四角／四邊）" Classes="zoho-group-label" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+
+                <!-- ── Format ── -->
+                <Border IsVisible="{Binding RibbonTab, Converter={x:Static conv:EditorConverters.IsRibbonTab}, ConverterParameter=Format}"
+                        Classes="zoho-ribbon-body">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                        <StackPanel Orientation="Horizontal" Spacing="0" Margin="4,2">
+                            <Border Classes="zoho-group">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <ComboBox Width="150" ItemsSource="{Binding FontFamilyOptions}"
+                                                  SelectedItem="{Binding ActiveFontFamily, Mode=TwoWay}" />
+                                        <ComboBox Width="64" ItemsSource="{Binding FontSizeOptions}"
+                                                  SelectedItem="{Binding ActiveFontSize, Mode=TwoWay}" />
+                                        <Button Content="B" FontWeight="Bold" Command="{Binding ToggleBoldCommand}" Classes="zoho-tbtn" Width="34" />
+                                        <Button Content="I" FontStyle="Italic" Command="{Binding ToggleItalicCommand}" Classes="zoho-tbtn" Width="34" />
+                                        <Button Content="U" Command="{Binding ToggleUnderlineCommand}" Classes="zoho-tbtn" Width="34" />
+                                    </StackPanel>
+                                    <TextBlock Text="字元" Classes="zoho-group-label" />
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="zoho-vsep" />
+                            <Border Classes="zoho-group">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="靠左" Command="{Binding SetAlignmentCommand}" CommandParameter="Left" Classes="zoho-tbtn" />
+                                        <Button Content="置中" Command="{Binding SetAlignmentCommand}" CommandParameter="Center" Classes="zoho-tbtn" />
+                                        <Button Content="靠右" Command="{Binding SetAlignmentCommand}" CommandParameter="Right" Classes="zoho-tbtn" />
+                                        <Button Content="左右對齊" Command="{Binding SetAlignmentCommand}" CommandParameter="Justify" Classes="zoho-tbtn" />
+                                        <Button Content="項目符號" Command="{Binding ToggleBulletListCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="編號" Command="{Binding ToggleNumberedListCommand}" Classes="zoho-tbtn" />
+                                    </StackPanel>
+                                    <TextBlock Text="段落" Classes="zoho-group-label" />
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="zoho-vsep" />
+                            <Border Classes="zoho-group">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="一般文字" Command="{Binding SetStyleCommand}" CommandParameter="Normal" Classes="zoho-tbtn" />
+                                        <Button Content="標題 1" Command="{Binding SetStyleCommand}" CommandParameter="Heading1" Classes="zoho-tbtn" FontWeight="Bold" FontSize="13" />
+                                        <Button Content="標題 2" Command="{Binding SetStyleCommand}" CommandParameter="Heading2" Classes="zoho-tbtn" FontWeight="SemiBold" />
+                                        <Button Content="標題 3" Command="{Binding SetStyleCommand}" CommandParameter="Heading3" Classes="zoho-tbtn" />
+                                    </StackPanel>
+                                    <TextBlock Text="段落樣式" Classes="zoho-group-label" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+
+                <!-- ── Tools ── -->
+                <Border IsVisible="{Binding RibbonTab, Converter={x:Static conv:EditorConverters.IsRibbonTab}, ConverterParameter=Tools}"
+                        Classes="zoho-ribbon-body">
+                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="8,6">
+                        <Button Content="尋找與取代" Command="{Binding ToggleFindPanelCommand}" Classes="zoho-tbtn" ToolTip.Tip="Ctrl+F" />
+                        <Button Content="字數統計" Command="{Binding RefreshWordCountCommand}" Classes="zoho-tbtn" />
+                        <Button Content="刪除區塊" Command="{Binding DeleteBlockCommand}" Classes="zoho-tbtn" />
+                        <Border Classes="zoho-vsep" />
+                        <ToggleSwitch IsChecked="{Binding AutoSaveEnabled}"
+                                      OnContent="自動儲存 開"
+                                      OffContent="自動儲存 關"
+                                      VerticalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Review ── -->
+                <Border IsVisible="{Binding RibbonTab, Converter={x:Static conv:EditorConverters.IsRibbonTab}, ConverterParameter=Review}"
+                        Classes="zoho-ribbon-body">
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="8,6">
+                        <TextBlock Text="校閱"
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold"
+                                   Foreground="#00A3E0"
+                                   Margin="0,0,8,0" />
+                        <Button Content="字數統計" Command="{Binding RefreshWordCountCommand}" Classes="zoho-tbtn" />
+                        <Button Content="尋找" Command="{Binding ToggleFindPanelCommand}" Classes="zoho-tbtn" />
+                        <TextBlock Text="{Binding StatisticsText}"
+                                   VerticalAlignment="Center"
+                                   FontSize="12"
+                                   Foreground="#4A5A6A"
+                                   Margin="12,0,0,0" />
+                        <TextBlock Text="（本機版無追蹤修訂／留言）"
+                                   VerticalAlignment="Center"
+                                   FontSize="11"
+                                   Foreground="#8A96A3"
+                                   Margin="12,0,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ── View ── -->
+                <Border IsVisible="{Binding RibbonTab, Converter={x:Static conv:EditorConverters.IsRibbonTab}, ConverterParameter=View}"
+                        Classes="zoho-ribbon-body">
+                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="8,6">
+                        <Button Content="−" Command="{Binding ZoomOutCommand}" Classes="zoho-tbtn" Width="32" />
+                        <TextBlock Text="{Binding ZoomText}" VerticalAlignment="Center" Width="48" TextAlignment="Center" FontWeight="SemiBold" />
+                        <Button Content="+" Command="{Binding ZoomInCommand}" Classes="zoho-tbtn" Width="32" />
+                        <Button Content="100%" Command="{Binding ZoomResetCommand}" Classes="zoho-tbtn" />
+                        <Border Classes="zoho-vsep" />
+                        <Button Content="左側導覽" Command="{Binding ToggleNavigatorCommand}" Classes="zoho-tbtn" />
+                        <Button Content="右側屬性" Command="{Binding ToggleSidebarCommand}" Classes="zoho-tbtn" />
+                        <Button Content="尋找列" Command="{Binding ToggleFindPanelCommand}" Classes="zoho-tbtn" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Find panel -->
+                <Border IsVisible="{Binding ShowFindPanel}"
+                        Background="#E8F7FC"
+                        BorderBrush="#B3E5F5"
+                        BorderThickness="0,1,0,0"
+                        Padding="14,8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="尋找與取代"
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold"
+                                   Foreground="#0078A8" />
+                        <TextBox Width="180" Text="{Binding FindText}" Watermark="尋找…" Classes="zoho-input" />
+                        <TextBox Width="160" Text="{Binding ReplaceText}" Watermark="取代為…" Classes="zoho-input" />
+                        <Button Content="下一個" Command="{Binding FindNextCommand}" Classes="zoho-ghost" />
+                        <Button Content="取代" Command="{Binding ReplaceOneCommand}" Classes="zoho-ghost" />
+                        <Button Content="全部取代" Command="{Binding ReplaceAllCommand}" Classes="zoho-ghost" />
+                        <Button Content="關閉" Command="{Binding ToggleFindPanelCommand}" Classes="zoho-ghost" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- Status bar -->
+        <Border DockPanel.Dock="Bottom" Classes="zoho-statusbar">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
+                <TextBlock Text="{Binding StatusText}"
+                           Classes="zoho-status-text"
+                           TextTrimming="CharacterEllipsis" />
+                <Border Grid.Column="1" Classes="zoho-status-sep" />
+                <TextBlock Grid.Column="2" Text="{Binding SelectionInfoText}" Classes="zoho-status-text" MinWidth="100" />
+                <Border Grid.Column="3" Classes="zoho-status-sep" />
+                <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8" Margin="8,0,4,0">
+                    <TextBlock Text="{Binding StatisticsText}" Classes="zoho-status-text" />
+                    <Button Content="−" Command="{Binding ZoomOutCommand}" Classes="zoho-tbtn-mini" />
+                    <TextBlock Text="{Binding ZoomText}" VerticalAlignment="Center" FontSize="11" MinWidth="36" TextAlignment="Center" />
+                    <Button Content="+" Command="{Binding ZoomInCommand}" Classes="zoho-tbtn-mini" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Workspace: left nav | page | right properties -->
+        <DockPanel>
+            <!-- Left navigator -->
+            <Border DockPanel.Dock="Left"
+                    IsVisible="{Binding ShowNavigator}"
+                    Width="200"
+                    Classes="zoho-panel zoho-panel-left">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Classes="zoho-panel-header">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="文件導覽" Classes="zoho-panel-title" />
+                            <Button Grid.Column="1" Content="✕" Classes="zoho-tbtn-mini" Command="{Binding ToggleNavigatorCommand}" />
+                        </Grid>
+                    </Border>
+                    <ScrollViewer Padding="10,8" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="檔案" Classes="zoho-section-label" />
+                            <Button Content="📄 開啟文件…" Command="{Binding OpenDocumentCommand}" Classes="zoho-nav-item" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" ToolTip.Tip="開啟 .docx（⌘O）" />
+                            <Button Content="🆕 新建文件" Command="{Binding NewDocumentCommand}" Classes="zoho-nav-item" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
+                            <Button Content="💾 儲存" Command="{Binding SaveDocumentCommand}" Classes="zoho-nav-item" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
+                            <Button Content="💾 另存新檔…" Command="{Binding SaveDocumentAsCommand}" Classes="zoho-nav-item" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
+                            <TextBlock Text="快速動作" Classes="zoho-section-label" Margin="0,8,0,0" />
+                            <Button Content="＋ 段落" Command="{Binding InsertParagraphCommand}" Classes="zoho-nav-item" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
+                            <Button Content="＋ 標題" Command="{Binding InsertHeadingCommand}" Classes="zoho-nav-item" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
+                            <Button Content="＋ 表格" Command="{Binding InsertTableCommand}" Classes="zoho-nav-item" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
+                            <Button Content="＋ 圖片" Command="{Binding InsertImageCommand}" Classes="zoho-nav-item" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
+
+                            <TextBlock Text="樣式" Classes="zoho-section-label" Margin="0,8,0,0" />
+                            <Button Content="一般文字" Command="{Binding SetStyleCommand}" CommandParameter="Normal"
+                                    Classes="zoho-nav-item" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
+                            <Button Content="標題 1" Command="{Binding SetStyleCommand}" CommandParameter="Heading1"
+                                    Classes="zoho-nav-item" FontWeight="Bold" FontSize="15"
+                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
+                            <Button Content="標題 2" Command="{Binding SetStyleCommand}" CommandParameter="Heading2"
+                                    Classes="zoho-nav-item" FontWeight="SemiBold" FontSize="13"
+                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
+                            <Button Content="標題 3" Command="{Binding SetStyleCommand}" CommandParameter="Heading3"
+                                    Classes="zoho-nav-item" FontWeight="SemiBold"
+                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
+
+                            <TextBlock Text="目前選取" Classes="zoho-section-label" Margin="0,8,0,0" />
+                            <TextBlock Text="{Binding SelectionInfoText}" FontSize="12" Foreground="#3D4F63" TextWrapping="Wrap" Margin="4,0" />
+                            <TextBlock Text="{Binding DocumentTitleDisplay}" FontSize="11" Foreground="#7A8899" TextWrapping="Wrap" Margin="4,0" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- Right properties -->
+            <Border DockPanel.Dock="Right"
+                    IsVisible="{Binding ShowSidebar}"
+                    Width="240"
+                    Classes="zoho-panel zoho-panel-right">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Classes="zoho-panel-header">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="屬性" Classes="zoho-panel-title" />
+                            <Button Grid.Column="1" Content="✕" Classes="zoho-tbtn-mini" Command="{Binding ToggleSidebarCommand}" />
+                        </Grid>
+                    </Border>
+                    <ScrollViewer Padding="10,8" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="10">
+                            <Border Classes="zoho-card">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="字元" Classes="zoho-section-label" />
+                                    <ComboBox HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding FontFamilyOptions}"
+                                              SelectedItem="{Binding ActiveFontFamily, Mode=TwoWay}" />
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <ComboBox Width="70" ItemsSource="{Binding FontSizeOptions}"
+                                                  SelectedItem="{Binding ActiveFontSize, Mode=TwoWay}" />
+                                        <Button Content="B" FontWeight="Bold" Command="{Binding ToggleBoldCommand}" Classes="zoho-tbtn" Width="34" />
+                                        <Button Content="I" FontStyle="Italic" Command="{Binding ToggleItalicCommand}" Classes="zoho-tbtn" Width="34" />
+                                        <Button Content="U" Command="{Binding ToggleUnderlineCommand}" Classes="zoho-tbtn" Width="34" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="zoho-card">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="段落" Classes="zoho-section-label" />
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="左" Command="{Binding SetAlignmentCommand}" CommandParameter="Left" Classes="zoho-tbtn" Width="40" />
+                                        <Button Content="中" Command="{Binding SetAlignmentCommand}" CommandParameter="Center" Classes="zoho-tbtn" Width="40" />
+                                        <Button Content="右" Command="{Binding SetAlignmentCommand}" CommandParameter="Right" Classes="zoho-tbtn" Width="40" />
+                                        <Button Content="齊" Command="{Binding SetAlignmentCommand}" CommandParameter="Justify" Classes="zoho-tbtn" Width="40" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="• 清單" Command="{Binding ToggleBulletListCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="1. 編號" Command="{Binding ToggleNumberedListCommand}" Classes="zoho-tbtn" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="zoho-card">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="表格" Classes="zoho-section-label" />
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="↑" Command="{Binding TableInsertRowAboveCommand}" Classes="zoho-tbtn" Width="36" ToolTip.Tip="向上新增列" />
+                                        <Button Content="↓" Command="{Binding TableAddRowBelowCommand}" Classes="zoho-tbtn" Width="36" ToolTip.Tip="向下新增列" />
+                                        <Button Content="←" Command="{Binding TableInsertColumnLeftCommand}" Classes="zoho-tbtn" Width="36" ToolTip.Tip="向左新增欄" />
+                                        <Button Content="→" Command="{Binding TableAddColumnRightCommand}" Classes="zoho-tbtn" Width="36" ToolTip.Tip="向右新增欄" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="刪列" Command="{Binding TableDeleteRowCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="刪欄" Command="{Binding TableDeleteColumnCommand}" Classes="zoho-tbtn" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="zoho-card">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="圖片" Classes="zoho-section-label" />
+                                    <TextBlock Text="{Binding ImageSizeText}" FontSize="12" Foreground="#4A5A6A" TextWrapping="Wrap" />
+                                    <UniformGrid Rows="3" Columns="3" Width="120" HorizontalAlignment="Left">
+                                        <Button Content="↖" Command="{Binding ImageStretchCommand}" CommandParameter="nw" Classes="zoho-tbtn" Margin="1" />
+                                        <Button Content="↑" Command="{Binding ImageStretchCommand}" CommandParameter="n" Classes="zoho-tbtn" Margin="1" />
+                                        <Button Content="↗" Command="{Binding ImageStretchCommand}" CommandParameter="ne" Classes="zoho-tbtn" Margin="1" />
+                                        <Button Content="←" Command="{Binding ImageStretchCommand}" CommandParameter="w" Classes="zoho-tbtn" Margin="1" />
+                                        <Button Content="◎" Command="{Binding ImageResetSizeCommand}" Classes="zoho-tbtn" Margin="1" ToolTip.Tip="重設大小" />
+                                        <Button Content="→" Command="{Binding ImageStretchCommand}" CommandParameter="e" Classes="zoho-tbtn" Margin="1" />
+                                        <Button Content="↙" Command="{Binding ImageStretchCommand}" CommandParameter="sw" Classes="zoho-tbtn" Margin="1" />
+                                        <Button Content="↓" Command="{Binding ImageStretchCommand}" CommandParameter="s" Classes="zoho-tbtn" Margin="1" />
+                                        <Button Content="↘" Command="{Binding ImageStretchCommand}" CommandParameter="se" Classes="zoho-tbtn" Margin="1" />
+                                    </UniformGrid>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <Button Content="放大" Command="{Binding ImageEnlargeCommand}" Classes="zoho-tbtn" />
+                                        <Button Content="縮小" Command="{Binding ImageShrinkCommand}" Classes="zoho-tbtn" />
+                                    </StackPanel>
+                                    <Button Content="符合頁寬" Command="{Binding ImageFitPageCommand}" Classes="zoho-tbtn" HorizontalAlignment="Stretch" />
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="zoho-card">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="文件資訊" Classes="zoho-section-label" />
+                                    <TextBlock Text="{Binding StatisticsText}" FontSize="11" Foreground="#3D4F63" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding SaveStatusDisplay}" FontSize="11" Foreground="#00A3E0" Margin="0,4,0,0" />
+                                    <ToggleSwitch IsChecked="{Binding AutoSaveEnabled}"
+                                                  OnContent="自動儲存"
+                                                  OffContent="自動儲存"
+                                                  Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- Page canvas -->
+            <Border Background="#D8DEE6">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto"
+                              AllowAutoHide="False">
+                    <Border Background="White"
+                            Margin="40,28"
+                            Padding="80,64"
+                            MinWidth="700"
+                            MaxWidth="820"
+                            HorizontalAlignment="Center"
+                            BoxShadow="0 2 8 0 #28000000, 0 1 2 0 #14000000"
+                            RenderTransformOrigin="0.5,0">
+                        <Border.RenderTransform>
+                            <ScaleTransform ScaleX="{Binding Zoom}" ScaleY="{Binding Zoom}" />
+                        </Border.RenderTransform>
+
+                        <ItemsControl ItemsSource="{Binding Document.Blocks}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="models:DocumentBlock">
+                                    <ContentControl Content="{Binding}">
+                                        <ContentControl.DataTemplates>
+                                            <DataTemplate DataType="models:ParagraphBlock">
+                                                <Border Margin="0,0,0,6"
+                                                        Padding="2,2"
+                                                        Background="Transparent"
+                                                        Cursor="Hand"
+                                                        PointerPressed="OnBlockPointerPressed">
+                                                    <Grid ColumnDefinitions="Auto,*">
+                                                        <TextBlock Grid.Column="0"
+                                                                   Text="{Binding ListKind, Converter={x:Static conv:EditorConverters.ListPrefix}}"
+                                                                   FontSize="{Binding FontSize}"
+                                                                   FontFamily="{Binding FontFamily, Converter={x:Static conv:EditorConverters.FontFamilyFromName}}"
+                                                                   VerticalAlignment="Top"
+                                                                   Margin="0,6,0,0"
+                                                                   Foreground="#1A2332" />
+                                                        <TextBox Grid.Column="1"
+                                                                 Text="{Binding Text, Mode=TwoWay}"
+                                                                 FontSize="{Binding FontSize}"
+                                                                 FontFamily="{Binding FontFamily, Converter={x:Static conv:EditorConverters.FontFamilyFromName}}"
+                                                                 FontWeight="{Binding IsBold, Converter={x:Static conv:EditorConverters.FontWeightFromBool}}"
+                                                                 FontStyle="{Binding IsItalic, Converter={x:Static conv:EditorConverters.FontStyleFromBool}}"
+                                                                 TextAlignment="{Binding Alignment, Converter={x:Static conv:EditorConverters.AlignmentFromKind}}"
+                                                                 AcceptsReturn="True"
+                                                                 TextWrapping="Wrap"
+                                                                 BorderThickness="0"
+                                                                 Background="Transparent"
+                                                                 Padding="2,4"
+                                                                 MinHeight="28"
+                                                                 Foreground="#1A2332"
+                                                                 CaretBrush="#00A3E0"
+                                                                 GotFocus="OnEditorGotFocus" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+
+                                            <DataTemplate DataType="models:TableBlock">
+                                                <Grid Margin="0,10,0,16"
+                                                      PointerPressed="OnBlockPointerPressed"
+                                                      ContextRequested="OnTableContextRequested">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <!-- 向上新增列 -->
+                                                    <Button Grid.Row="0" Grid.Column="1"
+                                                            Content="＋ 向上新增列"
+                                                            Classes="table-edge-btn"
+                                                            HorizontalAlignment="Center"
+                                                            Click="OnTableMenuInsertRowAbove"
+                                                            ToolTip.Tip="在目前儲存格上方新增一列" />
+
+                                                    <!-- 向左新增欄 -->
+                                                    <Button Grid.Row="1" Grid.Column="0"
+                                                            Content="＋&#x0a;左"
+                                                            Classes="table-edge-btn-v"
+                                                            VerticalAlignment="Center"
+                                                            Click="OnTableMenuInsertColumnLeft"
+                                                            ToolTip.Tip="在目前儲存格左側新增一欄" />
+
+                                                    <!-- 表格本體 -->
+                                                    <Border Grid.Row="1" Grid.Column="1"
+                                                            BorderBrush="#C5CDD8"
+                                                            BorderThickness="1"
+                                                            Background="White">
+                                                        <Border.ContextMenu>
+                                                            <ContextMenu Opening="OnTableContextMenuOpening">
+                                                                <MenuItem Header="↑ 向上新增列" Click="OnTableMenuInsertRowAbove" />
+                                                                <MenuItem Header="↓ 向下新增列" Click="OnTableMenuAddRowBelow" />
+                                                                <MenuItem Header="← 向左新增欄" Click="OnTableMenuInsertColumnLeft" />
+                                                                <MenuItem Header="→ 向右新增欄" Click="OnTableMenuAddColumnRight" />
+                                                                <Separator />
+                                                                <MenuItem Header="刪除列" Click="OnTableMenuDeleteRow" />
+                                                                <MenuItem Header="刪除欄" Click="OnTableMenuDeleteColumn" />
+                                                            </ContextMenu>
+                                                        </Border.ContextMenu>
+                                                        <ItemsControl ItemsSource="{Binding Rows}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate DataType="models:TableRowBlock">
+                                                                    <ItemsControl ItemsSource="{Binding Cells}">
+                                                                        <ItemsControl.ItemsPanel>
+                                                                            <ItemsPanelTemplate>
+                                                                                <!-- Rows=1 → auto columns from child count; updates when cells added -->
+                                                                                <UniformGrid Rows="1" />
+                                                                            </ItemsPanelTemplate>
+                                                                        </ItemsControl.ItemsPanel>
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate DataType="models:TableCellBlock">
+                                                                                <Border BorderBrush="#DCE2EA"
+                                                                                        BorderThickness="0.5"
+                                                                                        Padding="8,6"
+                                                                                        MinHeight="34"
+                                                                                        MinWidth="72"
+                                                                                        Background="White"
+                                                                                        PointerPressed="OnTableCellPointerPressed"
+                                                                                        ContextRequested="OnTableCellContextRequested">
+                                                                                    <Border.ContextMenu>
+                                                                                        <ContextMenu Opening="OnTableContextMenuOpening">
+                                                                                            <MenuItem Header="↑ 向上新增列" Click="OnTableMenuInsertRowAbove" />
+                                                                                            <MenuItem Header="↓ 向下新增列" Click="OnTableMenuAddRowBelow" />
+                                                                                            <MenuItem Header="← 向左新增欄" Click="OnTableMenuInsertColumnLeft" />
+                                                                                            <MenuItem Header="→ 向右新增欄" Click="OnTableMenuAddColumnRight" />
+                                                                                            <Separator />
+                                                                                            <MenuItem Header="刪除列" Click="OnTableMenuDeleteRow" />
+                                                                                            <MenuItem Header="刪除欄" Click="OnTableMenuDeleteColumn" />
+                                                                                        </ContextMenu>
+                                                                                    </Border.ContextMenu>
+                                                                                    <TextBox Text="{Binding Text, Mode=TwoWay}"
+                                                                                             FontSize="{Binding FontSize}"
+                                                                                             FontFamily="{Binding FontFamily, Converter={x:Static conv:EditorConverters.FontFamilyFromName}}"
+                                                                                             FontWeight="{Binding IsBold, Converter={x:Static conv:EditorConverters.FontWeightFromBool}}"
+                                                                                             FontStyle="{Binding IsItalic, Converter={x:Static conv:EditorConverters.FontStyleFromBool}}"
+                                                                                             TextAlignment="{Binding Alignment, Converter={x:Static conv:EditorConverters.AlignmentFromKind}}"
+                                                                                             BorderThickness="0"
+                                                                                             Background="Transparent"
+                                                                                             TextWrapping="Wrap"
+                                                                                             AcceptsReturn="True"
+                                                                                             MinHeight="24"
+                                                                                             Foreground="#1A2332"
+                                                                                             CaretBrush="#00A3E0"
+                                                                                             GotFocus="OnTableCellGotFocus"
+                                                                                             ContextRequested="OnTableCellContextRequested" />
+                                                                                </Border>
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </Border>
+
+                                                    <!-- 向右新增欄 -->
+                                                    <Button Grid.Row="1" Grid.Column="2"
+                                                            Content="＋&#x0a;右"
+                                                            Classes="table-edge-btn-v"
+                                                            VerticalAlignment="Center"
+                                                            Click="OnTableMenuAddColumnRight"
+                                                            ToolTip.Tip="在目前儲存格右側新增一欄" />
+
+                                                    <!-- 向下新增列 -->
+                                                    <Button Grid.Row="2" Grid.Column="1"
+                                                            Content="＋ 向下新增列"
+                                                            Classes="table-edge-btn"
+                                                            HorizontalAlignment="Center"
+                                                            Click="OnTableMenuAddRowBelow"
+                                                            ToolTip.Tip="在目前儲存格下方新增一列" />
+                                                </Grid>
+                                            </DataTemplate>
+
+                                            <DataTemplate DataType="models:ImageBlock">
+                                                <Border Margin="0,10,0,14"
+                                                        Padding="8"
+                                                        Background="Transparent"
+                                                        PointerPressed="OnImagePointerPressed"
+                                                        HorizontalAlignment="Left"
+                                                        MaxWidth="760">
+                                                    <StackPanel Spacing="4">
+                                                        <!-- Frame + 8 resize handles -->
+                                                        <Grid HorizontalAlignment="Left" Margin="6">
+                                                            <Border BorderBrush="{Binding IsSelected, Converter={x:Static conv:EditorConverters.ImageSelectionBrush}}"
+                                                                    BorderThickness="1.5"
+                                                                    CornerRadius="2"
+                                                                    Background="#FAFCFE"
+                                                                    HorizontalAlignment="Left"
+                                                                    VerticalAlignment="Top">
+                                                                <Image Source="{Binding Preview}"
+                                                                       Width="{Binding DisplayWidth}"
+                                                                       Height="{Binding ResolvedHeight}"
+                                                                       Stretch="Fill"
+                                                                       HorizontalAlignment="Left"
+                                                                       IsVisible="{Binding HasPreview}" />
+                                                            </Border>
+
+                                                            <!-- Overlay: 8 handles when selected -->
+                                                            <Grid IsVisible="{Binding IsSelected}"
+                                                                  Width="{Binding DisplayWidth}"
+                                                                  Height="{Binding ResolvedHeight}"
+                                                                  HorizontalAlignment="Left"
+                                                                  VerticalAlignment="Top"
+                                                                  IsHitTestVisible="True">
+                                                                <Border Tag="nw" Width="12" Height="12" Classes="img-handle"
+                                                                        HorizontalAlignment="Left" VerticalAlignment="Top"
+                                                                        Margin="-6,-6,0,0" Cursor="TopLeftCorner"
+                                                                        PointerPressed="OnImageResizeHandlePressed"
+                                                                        PointerMoved="OnImageResizeHandleMoved"
+                                                                        PointerReleased="OnImageResizeHandleReleased"
+                                                                        PointerCaptureLost="OnImageResizeHandleCaptureLost" />
+                                                                <Border Tag="n" Width="12" Height="12" Classes="img-handle"
+                                                                        HorizontalAlignment="Center" VerticalAlignment="Top"
+                                                                        Margin="0,-6,0,0" Cursor="TopSide"
+                                                                        PointerPressed="OnImageResizeHandlePressed"
+                                                                        PointerMoved="OnImageResizeHandleMoved"
+                                                                        PointerReleased="OnImageResizeHandleReleased"
+                                                                        PointerCaptureLost="OnImageResizeHandleCaptureLost" />
+                                                                <Border Tag="ne" Width="12" Height="12" Classes="img-handle"
+                                                                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                                        Margin="0,-6,-6,0" Cursor="TopRightCorner"
+                                                                        PointerPressed="OnImageResizeHandlePressed"
+                                                                        PointerMoved="OnImageResizeHandleMoved"
+                                                                        PointerReleased="OnImageResizeHandleReleased"
+                                                                        PointerCaptureLost="OnImageResizeHandleCaptureLost" />
+                                                                <Border Tag="w" Width="12" Height="12" Classes="img-handle"
+                                                                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                                        Margin="-6,0,0,0" Cursor="LeftSide"
+                                                                        PointerPressed="OnImageResizeHandlePressed"
+                                                                        PointerMoved="OnImageResizeHandleMoved"
+                                                                        PointerReleased="OnImageResizeHandleReleased"
+                                                                        PointerCaptureLost="OnImageResizeHandleCaptureLost" />
+                                                                <Border Tag="e" Width="12" Height="12" Classes="img-handle"
+                                                                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                                        Margin="0,0,-6,0" Cursor="RightSide"
+                                                                        PointerPressed="OnImageResizeHandlePressed"
+                                                                        PointerMoved="OnImageResizeHandleMoved"
+                                                                        PointerReleased="OnImageResizeHandleReleased"
+                                                                        PointerCaptureLost="OnImageResizeHandleCaptureLost" />
+                                                                <Border Tag="sw" Width="12" Height="12" Classes="img-handle"
+                                                                        HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                                                                        Margin="-6,0,0,-6" Cursor="BottomLeftCorner"
+                                                                        PointerPressed="OnImageResizeHandlePressed"
+                                                                        PointerMoved="OnImageResizeHandleMoved"
+                                                                        PointerReleased="OnImageResizeHandleReleased"
+                                                                        PointerCaptureLost="OnImageResizeHandleCaptureLost" />
+                                                                <Border Tag="s" Width="12" Height="12" Classes="img-handle"
+                                                                        HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                                                        Margin="0,0,0,-6" Cursor="BottomSide"
+                                                                        PointerPressed="OnImageResizeHandlePressed"
+                                                                        PointerMoved="OnImageResizeHandleMoved"
+                                                                        PointerReleased="OnImageResizeHandleReleased"
+                                                                        PointerCaptureLost="OnImageResizeHandleCaptureLost" />
+                                                                <Border Tag="se" Width="12" Height="12" Classes="img-handle"
+                                                                        HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                                                        Margin="0,0,-6,-6" Cursor="BottomRightCorner"
+                                                                        PointerPressed="OnImageResizeHandlePressed"
+                                                                        PointerMoved="OnImageResizeHandleMoved"
+                                                                        PointerReleased="OnImageResizeHandleReleased"
+                                                                        PointerCaptureLost="OnImageResizeHandleCaptureLost" />
+                                                            </Grid>
+                                                        </Grid>
+
+                                                        <Border IsVisible="{Binding IsDecodeFailed}"
+                                                                Background="#FFF8E6"
+                                                                Padding="12,8"
+                                                                CornerRadius="4">
+                                                            <TextBlock Text="（此圖片格式無法預覽，儲存時仍會保留）"
+                                                                       FontSize="12"
+                                                                       Foreground="#B06000"
+                                                                       TextWrapping="Wrap" />
+                                                        </Border>
+                                                        <TextBlock FontSize="11" Foreground="#7A8899">
+                                                            <TextBlock.Text>
+                                                                <MultiBinding StringFormat="{}{0}  ·  {1}">
+                                                                    <Binding Path="FileName" TargetNullValue="圖片" />
+                                                                    <Binding Path="SizeLabel" />
+                                                                </MultiBinding>
+                                                            </TextBlock.Text>
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ContentControl.DataTemplates>
+                                    </ContentControl>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                </ScrollViewer>
+            </Border>
+        </DockPanel>
+    </DockPanel>
+</Window>
